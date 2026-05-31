@@ -15,6 +15,7 @@
 			"slug": "posts",
 			"label": "Posts",
 			"labelSingular": "Post",
+			"icon": "✎",
 			"supports": ["drafts", "revisions", "search", "seo"],
 			"commentsEnabled": true,
 			"fields": [
@@ -47,6 +48,7 @@
 			"slug": "pages",
 			"label": "Pages",
 			"labelSingular": "Page",
+			"icon": "@",
 			"supports": ["drafts", "revisions", "search"],
 			"fields": [
 				{
