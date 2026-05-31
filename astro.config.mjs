@@ -3,8 +3,22 @@ import react from "@astrojs/react";
 import { d1, r2, sandbox } from "@emdash-cms/cloudflare";
 import { formsPlugin } from "@emdash-cms/plugin-forms";
 import webhookNotifier from "@emdash-cms/plugin-webhook-notifier";
+import { execSync } from "child_process";
 import { defineConfig, fontProviders } from "astro/config";
 import emdash from "emdash/astro";
+
+// Cloudflare Pages sets CF_PAGES_COMMIT_SHA automatically.
+// In local dev and other CI, fall back to reading the git hash directly.
+const buildId = (() => {
+	if (process.env.CF_PAGES_COMMIT_SHA) {
+		return process.env.CF_PAGES_COMMIT_SHA.slice(0, 7);
+	}
+	try {
+		return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+	} catch {
+		return "dev";
+	}
+})();
 
 export default defineConfig({
 	output: "server",
@@ -55,4 +69,9 @@ export default defineConfig({
 		},
 	],
 	devToolbar: { enabled: false },
+	vite: {
+		define: {
+			__SITE_BUILD_ID__: JSON.stringify(buildId),
+		},
+	},
 });
