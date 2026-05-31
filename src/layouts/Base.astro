@@ -1033,29 +1033,29 @@ const paletteItems = [
 			}
 
 			@media (max-width: 640px) {
+				/* Footer nav: stack to single column */
 				.foot-dirs {
 					grid-template-columns: 1fr;
 					gap: 1.375rem;
 				}
 
-				.nav-theme {
-					display: none;
-				}
-			}
-
-			@media (max-width: 640px) {
+				/* Keep header sticky so nav is always reachable while scrolling */
 				.site-header {
-					position: relative;
-					border-bottom: none;
+					position: sticky;
 				}
 
+				/*
+				 * Grid layout:
+				 *   Row 1: [~/Logo ............ 🔍]
+				 *   Row 2: [Home  About  Posts    ]
+				 */
 				.nav {
 					display: grid;
-					grid-template-columns: minmax(0, 1fr) auto;
+					grid-template-columns: 1fr auto;
 					align-items: center;
 					height: auto;
 					column-gap: var(--spacing-3);
-					row-gap: var(--spacing-2);
+					row-gap: 0.625rem;
 					padding: var(--spacing-3) var(--spacing-4);
 				}
 
@@ -1066,26 +1066,52 @@ const paletteItems = [
 					min-width: 0;
 				}
 
+				/* Dissolve nav-right so its children participate in the parent grid */
 				.nav-right {
-					grid-column: 1 / -1;
-					grid-row: 2;
-					display: grid;
-					row-gap: var(--spacing-2);
+					display: contents;
 				}
 
-				.nav-links {
-					grid-column: 1;
-					display: flex;
-					column-gap: var(--spacing-3);
-					row-gap: var(--spacing-1);
-					flex-wrap: wrap;
-					justify-content: flex-start;
-				}
-
-				.nav-admin {
+				/* Search button: top-right, icon only — proper 40px touch target */
+				.nav-cmd-btn {
 					grid-column: 2;
 					grid-row: 1;
+					padding: 8px 10px;
+					min-height: 40px;
+					min-width: 40px;
+					justify-content: center;
+					margin-inline-start: 0;
+				}
+
+				/* Hide "search" label and ⌘K hint — irrelevant on touch */
+				.nav-cmd-btn > span:not(.nav-cmd-kbd) {
+					display: none;
+				}
+
+				.nav-cmd-kbd {
+					display: none;
+				}
+
+				/* Nav links: full second row */
+				.nav-links {
+					grid-column: 1;
+					grid-row: 2;
+					display: flex;
+					gap: var(--spacing-4);
+					flex-wrap: wrap;
+					margin-inline-start: 0;
+				}
+
+				/* Theme toggle: hidden on mobile */
+				.nav-theme {
+					display: none;
+				}
+
+				/* Admin link (logged-in only): bottom-right */
+				.nav-admin {
+					grid-column: 2;
+					grid-row: 2;
 					justify-self: end;
+					align-self: center;
 					font-size: var(--font-size-xs);
 					margin-inline-start: 0;
 					white-space: nowrap;
