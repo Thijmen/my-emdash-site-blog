@@ -42,9 +42,10 @@ export default defineConfig({
 			storage: r2({ binding: "MEDIA" }),
 			plugins: [formsPlugin()],
 			sandboxed: [webhookNotifier],
-			// auth: access({
-			// 	teamDomain: "thijmen.cloudflareaccess.com"
-			// }),
+			auth: access({
+				teamDomain: "thijmen.cloudflareaccess.com",
+				audienceEnvVar: "CF_ACCESS_AUDIENCE"
+			}),
 			sandboxRunner: sandbox(),
 			marketplace: "https://marketplace.emdashcms.com",
 		}),
