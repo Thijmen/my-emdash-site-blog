@@ -1,5 +1,5 @@
 ---
-import { getMenu, getEmDashCollection, getSiteSettings } from "emdash";
+import { getMenu, getEmDashCollection, getSiteSettings, getCollectionInfo } from "emdash";
 declare const __SITE_BUILD_ID__: string;
 declare const __SITE_BUILD_DATE__: string;
 import {
@@ -78,30 +78,56 @@ const pageCtx = createPublicPageContext({
 // Check if user is logged in (for showing admin link)
 const isLoggedIn = !!Astro.locals.user;
 
-const paletteIconForItem = (label: string, url?: string | null) => {
-	const key = `${label} ${url ?? ""}`.toLowerCase();
-	if (url === "/") return "~/";
-	if (key.includes("post") || key.includes("writing")) return "✎";
-	if (key.includes("about")) return "@";
-	if (key.includes("rss") || key.includes("feed")) return "⊕";
-	if (url?.startsWith("http")) return "↗";
-	return "→";
+const collectionSlugFromUrl = (url?: string | null) => {
+	if (!url || url === "/" || url.startsWith("http") || url.startsWith("mailto:")) return null;
+	const [slug] = url.replace(/^\/+/, "").split("/");
+	return slug || null;
 };
 
-const paletteItems = [
+const paletteMenuItems = [
 	...(menu?.items ?? []).map((item) => ({
 		group: "Navigate",
-		ico: paletteIconForItem(item.label, item.url),
 		label: item.label,
 		href: item.url,
 		target: item.target,
 	})),
 	...(socialMenu?.items ?? []).map((item) => ({
 		group: "Connect",
-		ico: paletteIconForItem(item.label, item.url),
 		label: item.label,
 		href: item.url,
 		target: item.target,
+	})),
+];
+
+const paletteCollectionSlugs = [
+	...new Set(
+		paletteMenuItems
+			.map((item) => collectionSlugFromUrl(item.href))
+			.filter((slug): slug is string => Boolean(slug)),
+	),
+];
+
+const paletteCollectionInfo = await Promise.all(
+	paletteCollectionSlugs.map((slug) => getCollectionInfo(slug)),
+);
+const paletteCollectionIcons = new Map(
+	paletteCollectionInfo
+		.filter((collection) => collection?.icon)
+		.map((collection) => [collection!.slug, collection!.icon!]),
+);
+
+const paletteIconForUrl = (url?: string | null) => {
+	if (url === "/") return "~/";
+	if (url?.startsWith("http")) return "↗";
+	const collectionSlug = collectionSlugFromUrl(url);
+	if (collectionSlug) return paletteCollectionIcons.get(collectionSlug) ?? "→";
+	return "→";
+};
+
+const paletteItems = [
+	...paletteMenuItems.map((item) => ({
+		...item,
+		ico: paletteIconForUrl(item.href),
 	})),
 	{ group: "Actions", ico: "◐", label: "Toggle theme", action: "theme" },
 	{ group: "Actions", ico: "↗", label: "Copy email", action: "copy-email" },
