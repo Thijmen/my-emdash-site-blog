@@ -129,6 +129,17 @@ const isLoggedIn = !!Astro.locals.user;
 							))
 						}
 					</div>
+					<div class="nav-theme">
+						<button type="button" class="theme-btn" data-theme="light" aria-label="Light mode" title="Light mode">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+						</button>
+						<button type="button" class="theme-btn" data-theme="dark" aria-label="Dark mode" title="Dark mode">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+						</button>
+						<button type="button" class="theme-btn" data-theme="system" aria-label="System theme" title="System theme">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+						</button>
+					</div>
 				</div>
 				{
 					isLoggedIn && (
@@ -167,143 +178,80 @@ const isLoggedIn = !!Astro.locals.user;
 
 		<footer class="site-footer">
 			<div class="footer-inner">
-				<div class="footer-status">
-					<span class="footer-status-ok">● system operational</span>
-					<span>no trackers · no cookies</span>
-					<span>built with <a href="https://emdashcms.com" target="_blank" rel="noopener">emdash</a></span>
-				</div>
-			<div class="footer-grid">
-					<div class="footer-brand">
-						<a href="/" class="footer-logo">
-							{siteLogo
-								? <img src={siteLogo.url} alt={siteLogo.alt || siteTitle} class="footer-logo-img" />
-								: siteTitle
-							}
-						</a>
-						<p class="footer-tagline">{siteTagline}</p>
+				<div class="term-window">
+					<div class="term-bar">
+						<span class="term-lights">
+							<i class="term-light term-light-acc"></i>
+							<i class="term-light"></i>
+							<i class="term-light"></i>
+						</span>
+						<span class="term-path">thijmen@blog: ~/status</span>
+						<span class="term-right">tmux 0:zsh<span class="term-blink"> ▍</span></span>
 					</div>
-					<div class="footer-nav">
-						<h4 class="footer-heading">Navigate</h4>
-						<ul class="footer-links">
-							<li><a href="/">Home</a></li>
-							<li><a href="/posts">All Posts</a></li>
-							{
-								pages.slice(0, 3).map((page) => (
-									<li>
-										<a href={`/pages/${page.data.slug || page.id}`}>
-											{page.data.title}
-										</a>
-									</li>
-								))
-							}
-						</ul>
-					</div>
-					<div class="footer-nav">
-						<h4 class="footer-heading">Connect</h4>
-						<ul class="footer-links">
-							{
-								socialMenu?.items.map((item) => (
-									<li>
-										<a
-											href={item.url}
-											target={item.target}
-											rel={
-												item.target === "_blank"
-													? "noopener noreferrer"
-													: undefined
-											}
-										>
-											{item.label}
-										</a>
-									</li>
-								))
-							}
-							<li><a href="/rss.xml">RSS Feed</a></li>
-						</ul>
-					</div>
-					<div class="footer-widgets-section">
-						<WidgetArea name="footer" />
+					<div class="term-body">
+						<div class="term-cmd"><span class="term-pf">$</span> ./status --all</div>
+						<div class="svc-grid">
+							<div class="svc"><span class="svc-led"></span><span class="svc-k">web</span><span class="svc-v">200 OK</span></div>
+							<div class="svc"><span class="svc-led"></span><span class="svc-k">rss.xml</span><span class="svc-v">live</span></div>
+							<div class="svc"><span class="svc-led"></span><span class="svc-k">search-index</span><span class="svc-v">fresh</span></div>
+							<div class="svc svc-warn"><span class="svc-led"></span><span class="svc-k">comments</span><span class="svc-v">open</span></div>
+						</div>
+						<div class="metrics">
+							<div class="metric">
+								<div class="metric-label">uptime</div>
+								<div class="metric-value">99.98<span class="metric-acc">%</span></div>
+							</div>
+							<div class="metric">
+								<div class="metric-label">region · local time</div>
+								<div class="metric-value" id="footer-clock">--:--:-- CET</div>
+							</div>
+							<div class="metric">
+								<div class="metric-label">build</div>
+								<div class="metric-value"><span class="metric-acc">#</span>a1f9c4e</div>
+							</div>
+							<div class="metric">
+								<div class="metric-label">last deploy</div>
+								<div class="metric-value">2026-05-31</div>
+							</div>
+						</div>
+						<div class="term-cmd" style="margin-top: 0.875rem;">
+							<span class="term-pf">$</span>
+							<span class="term-out">echo "no trackers · no cookies · built with emdash"</span>
+						</div>
 					</div>
 				</div>
-				<div class="footer-bottom">
-					<p class="footer-copyright">
-						Powered by <a href="https://emdashcms.com">EmDash</a>
-					</p>
-					<div class="theme-switcher">
-						<button
-							type="button"
-							class="theme-btn"
-							data-theme="light"
-							aria-label="Light mode"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><circle cx="12" cy="12" r="5"></circle><line
-									x1="12"
-									y1="1"
-									x2="12"
-									y2="3"></line><line x1="12" y1="21" x2="12" y2="23"
-								></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"
-								></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"
-								></line><line x1="1" y1="12" x2="3" y2="12"></line><line
-									x1="21"
-									y1="12"
-									x2="23"
-									y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"
-								></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"
-								></line></svg
-							>
-						</button>
-						<button
-							type="button"
-							class="theme-btn"
-							data-theme="dark"
-							aria-label="Dark mode"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
-								></path></svg
-							>
-						</button>
-						<button
-							type="button"
-							class="theme-btn"
-							data-theme="system"
-							aria-label="System theme"
-						>
-							<svg
-								width="16"
-								height="16"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								><rect x="2" y="3" width="20" height="14" rx="2" ry="2"
-								></rect><line x1="8" y1="21" x2="16" y2="21"></line><line
-									x1="12"
-									y1="17"
-									x2="12"
-									y2="21"></line></svg
-							>
-						</button>
-					</div>
+
+				<div class="foot-dirs">
+					<nav class="foot-dir">
+						<div class="foot-dir-head">~/navigate</div>
+						<a href="/">home</a>
+						<a href="/posts">writing</a>
+						{pages.slice(0, 2).map((page) => (
+							<a href={`/pages/${page.data.slug || page.id}`}>{page.data.title?.toLowerCase()}</a>
+						))}
+					</nav>
+					<nav class="foot-dir">
+						<div class="foot-dir-head">~/connect</div>
+						<a href="/rss.xml">rss.xml</a>
+						<a href="mailto:thijmenstavenuiter@gmail.com">email</a>
+						{socialMenu?.items.map((item) => (
+							<a href={item.url} target={item.target} rel={item.target === "_blank" ? "noopener noreferrer" : undefined}>
+								{item.label.toLowerCase()}
+							</a>
+						))}
+					</nav>
+					<nav class="foot-dir">
+						<div class="foot-dir-head">~/meta</div>
+						<a href="/rss.xml">feed</a>
+						<a href="https://emdashcms.com" target="_blank" rel="noopener">colophon</a>
+					</nav>
+				</div>
+
+				<div class="foot-bar">
+					<span class="foot-prompt">
+						<span class="foot-pf">thijmen@blog</span>:~$ exit<span class="foot-cur"> █</span>
+					</span>
+					<span>© 2026 · built with <a href="https://emdashcms.com">emdash</a> · powered by caffeine</span>
 				</div>
 			</div>
 		</footer>
@@ -807,154 +755,13 @@ const isLoggedIn = !!Astro.locals.user;
 				to { transform: translateX(-50%); }
 			}
 
-			/* Footer */
-			.site-footer {
-				background: var(--color-bg-subtle);
-				border-top: 1px solid var(--color-border-subtle);
-			}
-
-			.footer-inner {
-				max-width: var(--wide-width);
-				margin: 0 auto;
-				padding: var(--spacing-8) var(--spacing-6) var(--spacing-8);
-			}
-
-			.footer-status {
+			/* Nav theme toggle */
+			.nav-theme {
 				display: flex;
-				flex-wrap: wrap;
-				gap: 0 1.5rem;
-				padding-bottom: var(--spacing-6);
-				margin-bottom: var(--spacing-6);
-				border-bottom: 1px solid var(--color-border-subtle);
-				font-family: var(--font-mono);
-				font-size: var(--font-size-xs);
-				color: var(--color-muted);
-			}
-
-			.footer-status a {
-				color: var(--color-muted);
-				transition: color var(--transition-fast);
-			}
-
-			.footer-status a:hover {
-				color: var(--color-text-secondary);
-			}
-
-			.footer-status-ok::before {
-				content: '● ';
-				color: hsl(140, 50%, 45%);
-			}
-
-			.footer-grid {
-				display: grid;
-				grid-template-columns: 2fr 1fr 1fr 1fr;
-				gap: var(--spacing-12);
-				margin-bottom: var(--spacing-12);
-			}
-
-			.footer-brand {
-				max-width: 280px;
-			}
-
-			.footer-logo {
-				font-family: var(--font-mono);
-				font-size: var(--font-size-sm);
-				font-weight: 600;
-				color: var(--color-text);
-				text-decoration: none;
-				letter-spacing: -0.01em;
-			}
-
-			.footer-logo-img {
-				height: 24px;
-				width: auto;
-			}
-
-			.footer-tagline {
-				margin-top: var(--spacing-3);
-				font-size: var(--font-size-sm);
-				color: var(--color-muted);
-				line-height: var(--leading-relaxed);
-			}
-
-			.footer-nav {
-				min-width: 0;
-			}
-
-			.footer-heading {
-				font-size: var(--font-size-xs);
-				font-weight: 500;
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wider);
-				color: var(--color-muted);
-				margin-bottom: var(--spacing-4);
-			}
-
-			.footer-links {
-				list-style: none;
-			}
-
-			.footer-links li {
-				margin-bottom: var(--spacing-2);
-			}
-
-			.footer-links a {
-				color: var(--color-text-secondary);
-				text-decoration: none;
-				font-size: var(--font-size-sm);
-				transition: color var(--transition-fast);
-			}
-
-			.footer-links a:hover {
-				color: var(--color-text);
-			}
-
-			.footer-widgets-section :global(.widget-area) {
-				display: block;
-			}
-
-			.footer-widgets-section :global(.widget) {
-				color: var(--color-text-secondary);
-			}
-
-			.footer-widgets-section :global(.widget__title) {
-				font-size: var(--font-size-xs);
-				font-weight: 500;
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wider);
-				color: var(--color-muted);
-				margin-bottom: var(--spacing-4);
-			}
-
-			.footer-widgets-section :global(.widget__content) {
-				color: var(--color-text-secondary);
-				font-size: var(--font-size-sm);
-				line-height: var(--leading-relaxed);
-			}
-
-			.footer-bottom {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				padding-top: var(--spacing-6);
-				border-top: 1px solid var(--color-border);
-			}
-
-			.footer-copyright {
-				font-size: var(--font-size-sm);
-				color: var(--color-muted);
-			}
-
-			.footer-copyright a {
-				color: var(--color-text-secondary);
-			}
-
-			/* Theme switcher */
-			.theme-switcher {
-				display: flex;
-				gap: var(--spacing-1);
-				padding: var(--spacing-1);
+				gap: 2px;
+				padding: 2px;
 				background: var(--color-surface);
+				border: 1px solid var(--color-border);
 				border-radius: var(--radius);
 			}
 
@@ -962,12 +769,12 @@ const isLoggedIn = !!Astro.locals.user;
 				display: flex;
 				align-items: center;
 				justify-content: center;
-				width: 32px;
-				height: 28px;
+				width: 26px;
+				height: 22px;
 				background: transparent;
 				border: none;
 				color: var(--color-muted);
-				border-radius: var(--radius);
+				border-radius: calc(var(--radius) - 1px);
 				cursor: pointer;
 				transition: all var(--transition-fast);
 			}
@@ -983,19 +790,263 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.theme-btn svg {
-				width: 16px;
-				height: 16px;
+				width: 14px;
+				height: 14px;
 			}
 
-			@media (max-width: 900px) {
-				.footer-grid {
-					grid-template-columns: 1fr 1fr;
-					gap: var(--spacing-8);
+			/* Footer — terminal console */
+			.site-footer {
+				border-top: 1.5px solid var(--color-text);
+				margin-top: 3.5rem;
+			}
+
+			.footer-inner {
+				max-width: var(--wide-width);
+				margin: 0 auto;
+				padding: 0 var(--spacing-6);
+			}
+
+			/* Terminal window */
+			.term-window {
+				border: 1.5px solid var(--color-text);
+				background: var(--color-surface);
+				font-family: var(--font-mono);
+				margin: 2.75rem 0 0;
+			}
+
+			.term-bar {
+				display: flex;
+				align-items: center;
+				gap: 0.625rem;
+				padding: 0.625rem 1rem;
+				border-bottom: 1.5px solid var(--color-text);
+				font-size: 0.75rem;
+				color: var(--color-muted);
+			}
+
+			.term-lights {
+				display: inline-flex;
+				gap: 6px;
+			}
+
+			.term-light {
+				width: 11px;
+				height: 11px;
+				border-radius: 50%;
+				background: var(--color-border);
+				display: inline-block;
+			}
+
+			.term-light-acc {
+				background: var(--color-accent);
+			}
+
+			.term-path {
+				margin-left: 4px;
+				color: var(--color-text-secondary);
+			}
+
+			.term-right {
+				margin-left: auto;
+			}
+
+			.term-blink {
+				color: var(--color-accent);
+				animation: term-blink 1.1s step-end infinite;
+			}
+
+			@keyframes term-blink {
+				50% { opacity: 0; }
+			}
+
+			.term-body {
+				padding: 1.25rem 1.125rem 1.375rem;
+				font-size: 0.8125rem;
+				line-height: 1.9;
+				color: var(--color-text-secondary);
+			}
+
+			.term-cmd {
+				color: var(--color-text);
+			}
+
+			.term-pf {
+				color: var(--color-accent);
+			}
+
+			.term-out {
+				color: var(--color-muted);
+			}
+
+			/* Service status grid */
+			.svc-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+				gap: 2px 26px;
+				margin: 0.75rem 0 0.375rem;
+			}
+
+			.svc {
+				display: flex;
+				align-items: center;
+				gap: 0.625rem;
+				padding: 5px 0;
+			}
+
+			.svc-led {
+				width: 9px;
+				height: 9px;
+				border-radius: 50%;
+				background: #4ade80;
+				box-shadow: 0 0 8px #4ade80;
+				flex-shrink: 0;
+				animation: svc-pulse 2.4s ease-in-out infinite;
+			}
+
+			.svc-warn .svc-led {
+				background: var(--color-accent);
+				box-shadow: 0 0 8px var(--color-accent);
+			}
+
+			@keyframes svc-pulse {
+				0%, 100% { opacity: 1; }
+				50% { opacity: 0.45; }
+			}
+
+			.svc-k {
+				color: var(--color-text-secondary);
+			}
+
+			.svc-v {
+				margin-left: auto;
+				color: var(--color-muted);
+				font-size: 0.75rem;
+			}
+
+			/* Metrics strip */
+			.metrics {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+				gap: 1px;
+				margin-top: 1rem;
+				border-top: 1px solid var(--color-border);
+			}
+
+			.metric {
+				padding: 0.875rem 1rem 0.875rem 0;
+				border-left: 1px solid var(--color-border);
+				padding-left: 1rem;
+			}
+
+			.metric:first-child {
+				border-left: none;
+				padding-left: 0;
+			}
+
+			.metric-label {
+				font-size: 0.65625rem;
+				text-transform: uppercase;
+				letter-spacing: 0.09em;
+				color: var(--color-muted);
+			}
+
+			.metric-value {
+				font-size: 1.0625rem;
+				color: var(--color-text);
+				margin-top: 0.375rem;
+				font-weight: 500;
+			}
+
+			.metric-acc {
+				color: var(--color-accent);
+			}
+
+			/* ls-style nav directories */
+			.foot-dirs {
+				display: grid;
+				grid-template-columns: repeat(3, 1fr);
+				gap: 1.625rem;
+				padding: 2.25rem 0 1.875rem;
+			}
+
+			.foot-dir-head {
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+				color: var(--color-accent);
+				margin-bottom: 0.75rem;
+			}
+
+			.foot-dir-head::before {
+				content: '$ ls ';
+				color: var(--color-muted);
+			}
+
+			.foot-dir a {
+				display: flex;
+				align-items: baseline;
+				gap: 0.625rem;
+				font-family: var(--font-mono);
+				font-size: 0.8125rem;
+				color: var(--color-text-secondary);
+				padding: 5px 0;
+				text-decoration: none;
+				transition: color var(--transition-fast);
+			}
+
+			.foot-dir a::before {
+				content: '·rw-';
+				color: var(--color-border);
+				font-size: 0.6875rem;
+			}
+
+			.foot-dir a:hover {
+				color: var(--color-accent);
+			}
+
+			/* Bottom bar */
+			.foot-bar {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				gap: 1rem;
+				flex-wrap: wrap;
+				padding: 1rem 0 1.875rem;
+				border-top: 1px solid var(--color-border-subtle);
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+				color: var(--color-muted);
+			}
+
+			.foot-prompt {
+				color: var(--color-text-secondary);
+			}
+
+			.foot-pf {
+				color: var(--color-accent);
+			}
+
+			.foot-cur {
+				color: var(--color-accent);
+				animation: term-blink 1.1s step-end infinite;
+			}
+
+			.foot-bar a {
+				color: var(--color-text-secondary);
+				text-decoration: none;
+			}
+
+			.foot-bar a:hover {
+				color: var(--color-accent);
+			}
+
+			@media (max-width: 640px) {
+				.foot-dirs {
+					grid-template-columns: 1fr;
+					gap: 1.375rem;
 				}
 
-				.footer-brand {
-					grid-column: span 2;
-					max-width: none;
+				.nav-theme {
+					display: none;
 				}
 			}
 
@@ -1058,27 +1109,24 @@ const isLoggedIn = !!Astro.locals.user;
 					margin-inline-start: 0;
 					white-space: nowrap;
 				}
-
-				.footer-grid {
-					grid-template-columns: 1fr;
-				}
-
-				.footer-brand {
-					grid-column: span 1;
-				}
-
-				.footer-bottom {
-					flex-direction: column;
-					gap: var(--spacing-4);
-					text-align: center;
-				}
-
-				.footer-controls {
-					flex-wrap: wrap;
-					justify-content: center;
-				}
 			}
 		</style>
+
+		<script>
+			// Live CET clock in terminal footer
+			const clock = document.getElementById("footer-clock");
+			if (clock) {
+				const tick = () => {
+					const t = new Date().toLocaleTimeString("en-GB", {
+						timeZone: "Europe/Amsterdam",
+						hour12: false,
+					});
+					clock.textContent = t + " CET";
+				};
+				tick();
+				setInterval(tick, 1000);
+			}
+		</script>
 
 		<script>
 			// ⌘K / Ctrl+K to focus search
