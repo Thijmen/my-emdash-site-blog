@@ -39,6 +39,13 @@ export default defineConfig({
 			weights: [400, 500],
 			fallbacks: ["monospace"],
 		},
+		{
+			provider: fontProviders.google(),
+			name: "Bricolage Grotesque",
+			cssVariable: "--font-display",
+			weights: [400, 500, 600, 700, 800],
+			fallbacks: ["sans-serif"],
+		},
 	],
 	devToolbar: { enabled: false },
 });

@@ -83,6 +83,7 @@ const isLoggedIn = !!Astro.locals.user;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<Font cssVariable="--font-sans" preload />
 		<Font cssVariable="--font-mono" />
+		<Font cssVariable="--font-display" />
 		<title>{fullTitle}</title>
 		<EmDashHead page={pageCtx} />
 		<script is:inline>
@@ -106,7 +107,7 @@ const isLoggedIn = !!Astro.locals.user;
 				<a href="/" class="site-title">
 					{siteLogo
 						? <img src={siteLogo.url} alt={siteLogo.alt || siteTitle} class="site-logo-img" />
-						: siteTitle
+						: <><span class="site-title-prefix">~/</span>{siteTitle}</>
 					}
 				</a>
 				<div class="nav-right">
@@ -138,13 +139,39 @@ const isLoggedIn = !!Astro.locals.user;
 			</nav>
 		</header>
 
+		<div class="site-marquee" aria-hidden="true">
+			<div class="marquee-track">
+				<span class="marquee-content">
+					<span class="mq-star">✦</span> THIJMEN STAVENUITER — STAFF SOFTWARE ENGINEER
+					<span class="mq-star">✦</span> AMSTERDAM · CET
+					<span class="mq-star">✦</span> OPEN TO ADVISORY &amp; MENTORSHIP
+					<span class="mq-star">✦</span> DISTRIBUTED SYSTEMS · PLATFORM ENGINEERING · DEV TOOLS
+					<span class="mq-star">✦</span> CURRENTLY: SERVICE-MESH MIGRATION &amp; ON-CALL HYGIENE
+					<span class="mq-sep">&nbsp;&nbsp;&nbsp;</span>
+				</span>
+				<span class="marquee-content" aria-hidden="true">
+					<span class="mq-star">✦</span> THIJMEN STAVENUITER — STAFF SOFTWARE ENGINEER
+					<span class="mq-star">✦</span> AMSTERDAM · CET
+					<span class="mq-star">✦</span> OPEN TO ADVISORY &amp; MENTORSHIP
+					<span class="mq-star">✦</span> DISTRIBUTED SYSTEMS · PLATFORM ENGINEERING · DEV TOOLS
+					<span class="mq-star">✦</span> CURRENTLY: SERVICE-MESH MIGRATION &amp; ON-CALL HYGIENE
+					<span class="mq-sep">&nbsp;&nbsp;&nbsp;</span>
+				</span>
+			</div>
+		</div>
+
 		<main>
 			<slot />
 		</main>
 
 		<footer class="site-footer">
 			<div class="footer-inner">
-				<div class="footer-grid">
+				<div class="footer-status">
+					<span class="footer-status-ok">● system operational</span>
+					<span>no trackers · no cookies</span>
+					<span>built with <a href="https://emdashcms.com" target="_blank" rel="noopener">emdash</a></span>
+				</div>
+			<div class="footer-grid">
 					<div class="footer-brand">
 						<a href="/" class="footer-logo">
 							{siteLogo
@@ -492,34 +519,7 @@ const isLoggedIn = !!Astro.locals.user;
 				}
 
 				/* Dark mode via system preference (when no explicit class) */
-				@media (prefers-color-scheme: dark) {
-					:root:not(.light) {
-						--color-bg: #0d0d0d;
-						--color-bg-subtle: #141414;
-						--color-text: #ededed;
-						--color-text-secondary: #a0a0a0;
-						--color-muted: #6b6b6b;
-						--color-border: #2a2a2a;
-						--color-border-subtle: #1f1f1f;
-						--color-surface: #181818;
-						--color-accent: #4d9fff;
-						--color-accent-hover: #6eb0ff;
-					}
-				}
-
-				/* Explicit dark mode */
-				:root.dark {
-					--color-bg: #0d0d0d;
-					--color-bg-subtle: #141414;
-					--color-text: #ededed;
-					--color-text-secondary: #a0a0a0;
-					--color-muted: #6b6b6b;
-					--color-border: #2a2a2a;
-					--color-border-subtle: #1f1f1f;
-					--color-surface: #181818;
-					--color-accent: #4d9fff;
-					--color-accent-hover: #6eb0ff;
-				}
+				/* theme.css overrides are unlayered and win here */
 
 				html {
 					scroll-behavior: smooth;
@@ -598,15 +598,24 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.site-title {
-				font-size: var(--font-size-lg);
+				font-family: var(--font-mono);
+				font-size: var(--font-size-sm);
 				font-weight: 600;
 				color: var(--color-text);
 				text-decoration: none;
-				letter-spacing: var(--tracking-snug);
+				letter-spacing: -0.01em;
+				display: inline-flex;
+				align-items: baseline;
+				gap: 0;
 			}
 
 			.site-title:hover {
+				color: var(--color-text);
+			}
+
+			.site-title-prefix {
 				color: var(--color-accent);
+				font-family: var(--font-mono);
 			}
 
 			.site-logo-img {
@@ -627,16 +636,19 @@ const isLoggedIn = !!Astro.locals.user;
 				display: flex;
 				gap: var(--spacing-5);
 				font-size: var(--font-size-sm);
+				font-family: var(--font-mono);
 			}
 
 			.nav-links a {
 				text-decoration: none;
-				color: var(--color-text);
+				color: var(--color-text-secondary);
 				transition: color var(--transition-fast);
+				position: relative;
 			}
 
-			.nav-links a:hover {
-				color: var(--color-accent);
+			.nav-links a:hover,
+			.nav-links a[aria-current] {
+				color: var(--color-text);
 			}
 
 			.nav-admin {
@@ -757,6 +769,43 @@ const isLoggedIn = !!Astro.locals.user;
 				min-height: calc(100vh - var(--nav-height) - 300px);
 			}
 
+			/* Status marquee */
+			.site-marquee {
+				overflow: hidden;
+				border-top: 1.5px solid var(--color-text);
+				border-bottom: 1.5px solid var(--color-text);
+				background: var(--color-accent);
+				color: var(--color-on-accent);
+				white-space: nowrap;
+				user-select: none;
+			}
+
+			.marquee-track {
+				display: inline-flex;
+				align-items: center;
+				animation: marquee-scroll 30s linear infinite;
+			}
+
+			.marquee-content {
+				display: inline-flex;
+				align-items: center;
+				gap: 2rem;
+				padding: 0.5625rem 0;
+				font-family: var(--font-mono);
+				font-size: 0.8125rem;
+				font-weight: 500;
+				letter-spacing: 0.01em;
+			}
+
+			.mq-star {
+				opacity: 0.8;
+			}
+
+			@keyframes marquee-scroll {
+				from { transform: translateX(0); }
+				to { transform: translateX(-50%); }
+			}
+
 			/* Footer */
 			.site-footer {
 				background: var(--color-bg-subtle);
@@ -766,7 +815,33 @@ const isLoggedIn = !!Astro.locals.user;
 			.footer-inner {
 				max-width: var(--wide-width);
 				margin: 0 auto;
-				padding: var(--spacing-16) var(--spacing-6) var(--spacing-8);
+				padding: var(--spacing-8) var(--spacing-6) var(--spacing-8);
+			}
+
+			.footer-status {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0 1.5rem;
+				padding-bottom: var(--spacing-6);
+				margin-bottom: var(--spacing-6);
+				border-bottom: 1px solid var(--color-border-subtle);
+				font-family: var(--font-mono);
+				font-size: var(--font-size-xs);
+				color: var(--color-muted);
+			}
+
+			.footer-status a {
+				color: var(--color-muted);
+				transition: color var(--transition-fast);
+			}
+
+			.footer-status a:hover {
+				color: var(--color-text-secondary);
+			}
+
+			.footer-status-ok::before {
+				content: '● ';
+				color: hsl(140, 50%, 45%);
 			}
 
 			.footer-grid {
@@ -781,11 +856,12 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 
 			.footer-logo {
-				font-size: var(--font-size-lg);
+				font-family: var(--font-mono);
+				font-size: var(--font-size-sm);
 				font-weight: 600;
 				color: var(--color-text);
 				text-decoration: none;
-				letter-spacing: var(--tracking-snug);
+				letter-spacing: -0.01em;
 			}
 
 			.footer-logo-img {

@@ -6,68 +6,42 @@ import {
 } from "emdash";
 import { Image } from "emdash/ui";
 import Base from "../layouts/Base.astro";
-import PostCard from "../components/PostCard.astro";
 import { getReadingTime } from "../utils/reading-time";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
-// Limit to what we render (1 featured + 6 grid). The DB does the slicing
-// instead of fetching every post and discarding the tail in JS.
-const POSTS_PER_PAGE = 7;
+const POSTS_LIMIT = 7;
 
 const [{ entries: posts, cacheHint }, settings] = await Promise.all([
 	getEmDashCollection("posts", {
 		orderBy: { published_at: "desc" },
-		limit: POSTS_PER_PAGE + 1, // +1 to detect "view all" need
+		limit: POSTS_LIMIT + 1,
 	}),
 	getSiteSettings(),
 ]);
+
 const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
 
-// Trim the lookahead post used to detect overflow
-const visiblePosts = posts.slice(0, POSTS_PER_PAGE);
-const hasMorePosts = posts.length > POSTS_PER_PAGE;
+const visiblePosts = posts.slice(0, POSTS_LIMIT);
+const hasMorePosts = posts.length > POSTS_LIMIT;
 
-// Find the first post with a featured image for the hero
-const featuredPost = visiblePosts.find((p) => p.data.featured_image);
-const featuredIndex = featuredPost ? visiblePosts.indexOf(featuredPost) : -1;
+const featuredPost = visiblePosts[0] ?? null;
+const rowPosts = visiblePosts.slice(1);
 
-// Get remaining posts (exclude featured if found, limit to 6 for grid)
-const gridPosts = visiblePosts.filter((_, i) => i !== featuredIndex).slice(0, 6);
+const tagsByEntry = await getTermsForEntries(
+	"posts",
+	visiblePosts.map((p) => p.data.id),
+	"tag",
+);
 
-// Single batched query for tags across the featured post + grid posts.
-// Avoids the N+1 pattern of calling getEntryTerms() per entry.
-// Bylines are already hydrated on entry.data.bylines by getEmDashCollection.
-const tagEntryIds = [
-	...(featuredPost ? [featuredPost.data.id] : []),
-	...gridPosts.map((p) => p.data.id),
-];
-const tagsByEntry = await getTermsForEntries("posts", tagEntryIds, "tag");
+const getFirstTag = (id: string) => tagsByEntry.get(id)?.[0] ?? null;
 
-const featuredTags = featuredPost
-	? (tagsByEntry.get(featuredPost.data.id) ?? []).map((t) => ({
-			slug: t.slug,
-			label: t.label,
-		}))
-	: [];
-const featuredBylines = featuredPost?.data.bylines ?? [];
-
-const gridPostsWithTags = gridPosts.map((post) => ({
-	post,
-	tags: (tagsByEntry.get(post.data.id) ?? []).map((t) => ({
-		slug: t.slug,
-		label: t.label,
-	})),
-	bylines: post.data.bylines ?? [],
-}));
-
-// Format date helper
 function formatDate(date: Date | null | undefined) {
 	if (!date) return null;
 	return date.toLocaleDateString("en-US", {
 		year: "numeric",
-		month: "long",
+		month: "short",
 		day: "numeric",
 	});
 }
@@ -79,311 +53,238 @@ function formatDate(date: Date | null | undefined) {
 			<section class="empty-state">
 				<h2>No posts yet</h2>
 				<p>Create your first post in the admin panel.</p>
-				<a href="/_emdash/admin/content/posts/new" class="btn">
+				<a href="/_emdash/admin/content/posts/new" class="btn-primary">
 					Create a post
 				</a>
 			</section>
 		) : (
-			<div class="home-content">
-				{/* Featured Post - Side by side */}
-				{featuredPost && (
-					<section class="featured-section">
-						<div class="featured-grid">
-							<a href={`/posts/${featuredPost.id}`} class="featured-image-link">
-								<div class="featured-image">
-									<Image image={featuredPost.data.featured_image} />
+			<div class="home">
+				{/* ── HERO ── */}
+				<section class="hero">
+					<div class="grid-lines" aria-hidden="true" />
+					<div class="hero-inner">
+						<p class="hero-kicker">
+							Staff Software Engineer — Platform &amp; Distributed Systems
+						</p>
+						<h1 class="hero-h">
+							I build{" "}
+							<span class="hero-acc">calm</span>
+							<br />
+							infrastructure for
+							<br />
+							<em>noisy</em> systems.
+						</h1>
+						<div class="hero-body">
+							<div class="hero-text">
+								<p class="hero-lead">{siteTagline}</p>
+								<div class="hero-pills">
+									<a href="/posts" class="pill pill-solid">
+										read the writing <span aria-hidden="true">→</span>
+									</a>
 								</div>
-							</a>
-							<div class="featured-content">
-								<div class="featured-meta">
-									{featuredBylines.length > 0 && (
-										<>
-											<div class="featured-bylines">
-												{featuredBylines.slice(0, 2).map((credit, index) => (
-													<>
-														{index > 0 && <span class="byline-sep">,</span>}
-														<span class="featured-byline">
-															{credit.byline.avatarMediaId && (
-																<img
-																	src={`/_emdash/api/media/file/${credit.byline.avatarMediaId}`}
-																	alt={credit.byline.displayName}
-																	class="featured-byline-avatar"
-																/>
-															)}
-															<span class="featured-byline-name">
-																{credit.byline.displayName}
-															</span>
-														</span>
-													</>
-												))}
-												{featuredBylines.length > 2 && (
-													<span class="byline-more">
-														+{featuredBylines.length - 2}
-													</span>
-												)}
-											</div>
-											<span class="meta-dot" />
-										</>
-									)}
-									{formatDate(featuredPost.data.publishedAt) && (
-										<time>{formatDate(featuredPost.data.publishedAt)}</time>
-									)}
-									<span class="meta-dot" />
-									<span>
-										{getReadingTime(featuredPost.data.content)} min read
+							</div>
+							<div class="hero-term">
+								<div class="term-bar">
+									<span class="term-dots" aria-hidden="true">
+										<i class="term-dot term-dot-acc" />
+										<i class="term-dot" />
+										<i class="term-dot" />
 									</span>
+									<span>thijmen@dev — zsh</span>
 								</div>
-								<a
-									href={`/posts/${featuredPost.id}`}
-									class="featured-title-link"
-								>
-									<h1 class="featured-title">{featuredPost.data.title}</h1>
-								</a>
-								{featuredPost.data.excerpt && (
-									<p class="featured-excerpt">{featuredPost.data.excerpt}</p>
-								)}
-								{featuredTags.length > 0 && (
-									<div class="featured-tags">
-										{featuredTags.map((tag) => (
-											<a href={`/tag/${tag.slug}`} class="featured-tag">
-												{tag.label}
-											</a>
-										))}
-									</div>
-								)}
+								<div class="term-body">
+									<code id="term-output" class="term-text" aria-live="off" />
+									<span class="term-cursor" aria-hidden="true" />
+								</div>
 							</div>
 						</div>
-					</section>
-				)}
+					</div>
+				</section>
 
-				{/* Latest Posts */}
-				{gridPostsWithTags.length > 0 && (
-					<section class="posts-section">
-						<header class="section-header">
-							<h2 class="section-title">Latest</h2>
+				{/* ── STATS STRIP ── */}
+				<div class="stats-wrap">
+					<div class="stats-strip">
+						{[
+							{ fig: String(visiblePosts.length), lbl: "essays published" },
+							{ fig: "10+", lbl: "years building" },
+							{ fig: "4", lbl: "open source tools" },
+							{ fig: "3", lbl: "conference talks" },
+						].map((s, i) => (
+							<div class={`stat${i === 0 ? " stat-noborder" : ""}`}>
+								<div class="stat-fig">{s.fig}</div>
+								<div class="stat-lbl">{s.lbl}</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* ── WRITING ── */}
+				<section class="writing-section">
+					<div class="section-inner">
+						<div class="sec-head">
+							<span class="sec-num">01</span>
+							<h2 class="sec-title">Writing</h2>
 							{hasMorePosts && (
-								<a href="/posts" class="section-link">
-									View all
+								<a href="/posts" class="sec-link">
+									all posts →
 								</a>
 							)}
-						</header>
-						<div class="posts-grid">
-							{gridPostsWithTags.map(({ post, tags, bylines }) => (
-								<PostCard
-									title={post.data.title ?? "Untitled"}
-									excerpt={post.data.excerpt}
-									featuredImage={post.data.featured_image}
-									href={`/posts/${post.id}`}
-									date={post.data.publishedAt ?? undefined}
-									readingTime={getReadingTime(post.data.content)}
-									tags={tags}
-									bylines={bylines}
-								/>
-							))}
 						</div>
-					</section>
-				)}
+
+						{/* Featured post */}
+						{featuredPost && (
+							<a
+								class="featured-post"
+								href={`/posts/${featuredPost.id}`}
+							>
+								<div class="featured-img">
+									{featuredPost.data.featured_image ? (
+										<Image image={featuredPost.data.featured_image} />
+									) : (
+										<div class="img-placeholder">
+											<span>{featuredPost.data.title}</span>
+										</div>
+									)}
+								</div>
+								<div class="featured-text">
+									<div class="featured-meta">
+										<span class="featured-badge">● FEATURED</span>
+										{featuredPost.data.publishedAt && (
+											<>
+												<span>·</span>
+												<time>
+													{formatDate(featuredPost.data.publishedAt)}
+												</time>
+											</>
+										)}
+										<span>·</span>
+										<span>
+											{getReadingTime(featuredPost.data.content)} min
+										</span>
+									</div>
+									<h3 class="featured-title">{featuredPost.data.title}</h3>
+									{featuredPost.data.excerpt && (
+										<p class="featured-excerpt">
+											{featuredPost.data.excerpt}
+										</p>
+									)}
+									<span class="pill pill-ghost featured-cta">
+										read essay →
+									</span>
+								</div>
+							</a>
+						)}
+
+						{/* Editorial rows */}
+						{rowPosts.length > 0 && (
+							<div class="erows">
+								{rowPosts.map((post, i) => {
+									const tag = getFirstTag(post.data.id);
+									return (
+										<a class="erow" href={`/posts/${post.id}`}>
+											<span class="erow-idx">
+												{String(i + 2).padStart(2, "0")}
+											</span>
+											<div class="erow-content">
+												<div class="erow-title">{post.data.title}</div>
+												<div class="erow-meta">
+													{post.data.publishedAt && (
+														<time>
+															{formatDate(post.data.publishedAt)}
+														</time>
+													)}
+													<span>·</span>
+													<span>
+														{getReadingTime(post.data.content)} min read
+													</span>
+												</div>
+											</div>
+											<div class="erow-right">
+												{tag && (
+													<span class="erow-tag">
+														#{tag.label.toLowerCase().replace(/\s+/g, "-")}
+													</span>
+												)}
+												<span class="erow-arrow" aria-hidden="true">
+													→
+												</span>
+											</div>
+										</a>
+									);
+								})}
+							</div>
+						)}
+					</div>
+				</section>
+
+				{/* ── CTA ── */}
+				<section class="cta-section">
+					<div class="section-inner">
+						<div class="cta-block">
+							<div>
+								<p class="cta-kicker">Get in touch</p>
+								<h2 class="cta-h">
+									Let's build
+									<br />
+									something calm.
+								</h2>
+							</div>
+							<div class="cta-right">
+								<code class="cta-email">$ mailx thijmenstavenuiter@gmail.com</code>
+								<a
+									href="mailto:thijmenstavenuiter@gmail.com"
+									class="cta-btn"
+								>
+									send email →
+								</a>
+							</div>
+						</div>
+					</div>
+				</section>
 			</div>
 		)
 	}
 </Base>
 
+<script>
+	const output = document.getElementById("term-output") as HTMLElement;
+	if (output) {
+		const lines = [
+			"> whoami",
+			"staff engineer · platform",
+			"",
+			"> mission",
+			"make distributed systems",
+			"feel routine — for everyone.",
+		];
+		const flat = lines.join("\n");
+		let pos = 0;
+
+		const tick = () => {
+			output.textContent = flat.slice(0, pos);
+			if (pos < flat.length) {
+				pos++;
+				setTimeout(tick, pos === 1 ? 500 : 22 + Math.random() * 14);
+			}
+		};
+
+		setTimeout(tick, 800);
+	}
+</script>
+
 <style>
-	.home-content {
+	/* ── Layout ── */
+	.home {
+		container-type: inline-size;
+	}
+
+	.section-inner {
 		max-width: var(--wide-width);
 		margin: 0 auto;
-		padding: var(--spacing-16) var(--spacing-6);
+		padding: 0 var(--spacing-6);
 	}
 
-	/* Featured Section - Side by side */
-	.featured-section {
-		margin-bottom: var(--spacing-16);
-	}
-
-	.featured-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-8);
-		align-items: center;
-	}
-
-	.featured-image-link {
-		grid-column: 1 / 3;
-		display: block;
-		/* Extend to viewport edge, but cap at -6rem minimum extension */
-		margin-left: min(
-			-6rem,
-			calc(-1 * (var(--spacing-6) + (100vw - var(--wide-width)) / 2))
-		);
-	}
-
-	.featured-image {
-		overflow: hidden;
-		border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
-		background: var(--color-surface);
-	}
-
-	.featured-image img {
-		width: 100%;
-		height: auto;
-		aspect-ratio: 4 / 3;
-		object-fit: cover;
-		transition: transform 0.4s ease;
-	}
-
-	.featured-image-link:hover .featured-image img,
-	.featured-grid:has(.featured-title-link:hover) .featured-image img {
-		transform: scale(1.02);
-	}
-
-	.featured-content {
-		display: flex;
-		flex-direction: column;
-		gap: var(--spacing-4);
-	}
-
-	.featured-meta {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		column-gap: var(--spacing-3);
-		row-gap: var(--spacing-1);
-		font-size: var(--font-size-sm);
-		color: var(--color-muted);
-	}
-
-	.meta-dot {
-		width: 3px;
-		height: 3px;
-		border-radius: 50%;
-		background: var(--color-muted);
-	}
-
-	/* Featured bylines */
-	.featured-bylines {
-		display: flex;
-		align-items: center;
-		gap: 2px;
-	}
-
-	.featured-byline {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--spacing-2);
-	}
-
-	.featured-byline-avatar {
-		width: var(--avatar-size-md);
-		height: var(--avatar-size-md);
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.featured-byline-name {
-		font-weight: 500;
-		color: var(--color-text-secondary);
-	}
-
-	.byline-sep {
-		color: var(--color-muted);
-		margin-right: 2px;
-	}
-
-	.byline-more {
-		font-size: var(--font-size-xs);
-		color: var(--color-muted);
-		margin-left: 2px;
-	}
-
-	.featured-title-link {
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.featured-title {
-		font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-4xl));
-		font-weight: 700;
-		line-height: var(--leading-tight);
-		letter-spacing: var(--tracking-tight);
-		transition: color var(--transition-fast);
-	}
-
-	.featured-title-link:hover .featured-title,
-	.featured-grid:has(.featured-image-link:hover) .featured-title {
-		color: var(--color-accent);
-	}
-
-	.featured-excerpt {
-		font-size: var(--font-size-lg);
-		line-height: var(--leading-relaxed);
-		color: var(--color-text-secondary);
-	}
-
-	.featured-tags {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--spacing-2);
-		margin-top: var(--spacing-2);
-	}
-
-	.featured-tag {
-		display: inline-block;
-		padding: var(--tag-padding-y) var(--spacing-2);
-		font-size: var(--font-size-xs);
-		color: var(--color-text-secondary);
-		background: var(--color-surface);
-		border-radius: var(--radius);
-		text-decoration: none;
-		transition:
-			color var(--transition-fast),
-			background var(--transition-fast);
-	}
-
-	.featured-tag:hover {
-		color: var(--color-text);
-		background: var(--color-border);
-	}
-
-	/* Section header */
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		margin-bottom: var(--spacing-8);
-		padding-bottom: var(--spacing-4);
-		border-bottom: 1px solid var(--color-border-subtle);
-	}
-
-	.section-title {
-		font-size: var(--font-size-sm);
-		font-weight: 500;
-		text-transform: uppercase;
-		letter-spacing: var(--tracking-wider);
-		color: var(--color-muted);
-	}
-
-	.section-link {
-		font-size: var(--font-size-sm);
-		color: var(--color-accent);
-		text-decoration: none;
-		transition: color var(--transition-fast);
-	}
-
-	.section-link:hover {
-		color: var(--color-accent-hover);
-	}
-
-	/* Posts Grid */
-	.posts-section {
-	}
-
-	.posts-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: var(--spacing-12) var(--spacing-8);
-	}
-
-	/* Empty State */
+	/* ── Empty state ── */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
@@ -397,14 +298,13 @@ function formatDate(date: Date | null | undefined) {
 
 	.empty-state h2 {
 		font-size: var(--font-size-2xl);
-		font-weight: 600;
 	}
 
 	.empty-state p {
 		color: var(--color-muted);
 	}
 
-	.btn {
+	.btn-primary {
 		display: inline-block;
 		margin-top: var(--spacing-4);
 		padding: var(--spacing-3) var(--spacing-6);
@@ -414,50 +314,625 @@ function formatDate(date: Date | null | undefined) {
 		border-radius: var(--radius);
 		font-size: var(--font-size-sm);
 		font-weight: 500;
-		transition: background var(--transition-fast);
 	}
 
-	.btn:hover {
-		background: var(--color-accent-hover);
+	/* ── HERO ── */
+	.hero {
+		position: relative;
+		padding: 4rem var(--spacing-6) 3.5rem;
 	}
 
-	/* Responsive */
+	.grid-lines {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+		background-image: linear-gradient(
+			to right,
+			var(--color-border) 1px,
+			transparent 1px
+		);
+		background-size: 25% 100%;
+		opacity: 0.35;
+	}
+
+	.hero-inner {
+		position: relative;
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		z-index: 1;
+	}
+
+	.hero-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		margin-bottom: 1.625rem;
+	}
+
+	.hero-kicker::before {
+		content: "";
+		width: 1.625rem;
+		height: 1.5px;
+		background: var(--color-accent);
+		flex-shrink: 0;
+	}
+
+	.hero-h {
+		font-family: var(--font-display);
+		font-weight: 800;
+		letter-spacing: -0.038em;
+		line-height: 0.92;
+		font-size: clamp(2.375rem, 8.6cqw, 5.125rem);
+		margin-bottom: 0;
+	}
+
+	.hero-acc {
+		color: var(--color-accent);
+	}
+
+	.hero-h em {
+		font-style: italic;
+		font-weight: 600;
+	}
+
+	.hero-body {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+		gap: 1.75rem;
+		align-items: start;
+		margin-top: 2.375rem;
+	}
+
+	.hero-lead {
+		font-size: 1.0625rem;
+		line-height: 1.6;
+		color: var(--color-text-secondary);
+		max-width: 28.75rem;
+		margin-bottom: 1.625rem;
+	}
+
+	.hero-pills {
+		display: flex;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	/* Pill buttons */
+	.pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 500;
+		padding: 0.75rem 1.125rem;
+		border: 1.5px solid var(--color-text);
+		color: var(--color-text);
+		text-decoration: none;
+		transition:
+			transform 0.16s,
+			box-shadow 0.16s;
+		background: transparent;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.pill:hover {
+		transform: translate(-3px, -3px);
+		box-shadow: 5px 5px 0 var(--color-accent);
+		color: var(--color-text);
+	}
+
+	.pill-solid {
+		background: var(--color-text);
+		color: var(--color-bg);
+	}
+
+	.pill-solid:hover {
+		color: var(--color-bg);
+	}
+
+	.pill-ghost {
+		border-color: var(--color-border);
+		color: var(--color-text-secondary);
+	}
+
+	.pill-ghost:hover {
+		color: var(--color-text);
+	}
+
+	/* Terminal block */
+	.hero-term {
+		border: 1.5px solid var(--color-text);
+		background: var(--color-surface);
+		font-family: var(--font-mono);
+	}
+
+	.term-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5625rem 0.875rem;
+		border-bottom: 1.5px solid var(--color-border);
+		font-size: 0.71875rem;
+		color: var(--color-muted);
+	}
+
+	.term-dots {
+		display: inline-flex;
+		gap: 5px;
+	}
+
+	.term-dot {
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		background: var(--color-border);
+		display: inline-block;
+	}
+
+	.term-dot-acc {
+		background: var(--color-accent);
+	}
+
+	.term-body {
+		padding: 1rem 1rem 1.125rem;
+		font-size: 0.8125rem;
+		line-height: 1.75;
+		color: var(--color-text-secondary);
+		min-height: 8rem;
+	}
+
+	.term-text {
+		white-space: pre;
+		font-family: inherit;
+		font-size: inherit;
+		display: inline;
+	}
+
+	.term-cursor {
+		display: inline-block;
+		width: 0.55em;
+		height: 1em;
+		background: var(--color-accent);
+		vertical-align: -0.13em;
+		margin-left: 2px;
+		animation: blink 1.05s steps(2, end) infinite;
+	}
+
+	@keyframes blink {
+		50% {
+			opacity: 0;
+		}
+	}
+
+	/* ── STATS ── */
+	.stats-wrap {
+		padding: 0.5rem var(--spacing-6) 3.5rem;
+	}
+
+	.stats-strip {
+		max-width: var(--wide-width);
+		margin: 0 auto;
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		border-top: 1.5px solid var(--color-text);
+		border-bottom: 1.5px solid var(--color-text);
+	}
+
+	.stat {
+		padding: 1.75rem 1.125rem;
+		border-left: 1px solid var(--color-border);
+	}
+
+	.stat-noborder {
+		border-left: none;
+	}
+
+	.stat-fig {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: clamp(2.125rem, 7cqw, 4rem);
+		letter-spacing: -0.04em;
+		line-height: 0.9;
+		color: var(--color-accent);
+	}
+
+	.stat-lbl {
+		font-family: var(--font-mono);
+		font-size: 0.71875rem;
+		color: var(--color-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin-top: 0.625rem;
+	}
+
+	/* ── SECTION HEADER ── */
+	.sec-head {
+		display: flex;
+		align-items: baseline;
+		gap: 1.125rem;
+		padding-bottom: 0.875rem;
+		border-bottom: 1.5px solid var(--color-text);
+		margin-bottom: 2rem;
+	}
+
+	.sec-num {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--color-accent);
+		letter-spacing: 0.04em;
+	}
+
+	.sec-title {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 4.2cqw, 2.5rem);
+		letter-spacing: -0.02em;
+		line-height: 1;
+	}
+
+	.sec-link {
+		margin-left: auto;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		text-decoration: none;
+		align-self: flex-end;
+		transition: color var(--transition-fast);
+		white-space: nowrap;
+	}
+
+	.sec-link:hover {
+		color: var(--color-accent);
+	}
+
+	/* ── WRITING SECTION ── */
+	.writing-section {
+		padding: 0 0 4rem;
+	}
+
+	/* Featured post */
+	.featured-post {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 2rem;
+		align-items: center;
+		margin-bottom: 1.125rem;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.featured-img {
+		aspect-ratio: 4 / 3;
+		min-height: 220px;
+		overflow: hidden;
+		border: 1.5px solid var(--color-border);
+	}
+
+	.featured-img img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.35s ease;
+	}
+
+	.featured-post:hover .featured-img img {
+		transform: scale(1.02);
+	}
+
+	.img-placeholder {
+		width: 100%;
+		height: 100%;
+		background: repeating-linear-gradient(
+			135deg,
+			var(--color-surface) 0 12px,
+			var(--color-border-subtle) 12px 24px
+		);
+		display: flex;
+		align-items: flex-end;
+		justify-content: flex-start;
+		padding: 0.75rem;
+	}
+
+	.img-placeholder span {
+		font-family: var(--font-mono);
+		font-size: 0.71875rem;
+		color: var(--color-muted);
+		background: color-mix(in srgb, var(--color-bg) 85%, transparent);
+		padding: 0.25rem 0.625rem;
+		border: 1px solid var(--color-border);
+	}
+
+	.featured-text {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.featured-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		flex-wrap: wrap;
+	}
+
+	.featured-badge {
+		color: var(--color-accent);
+		font-weight: 500;
+	}
+
+	.featured-title {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4.4cqw, 2.75rem);
+		letter-spacing: -0.025em;
+		line-height: 1.05;
+		transition: color var(--transition-fast);
+	}
+
+	.featured-post:hover .featured-title {
+		color: var(--color-accent);
+	}
+
+	.featured-excerpt {
+		font-size: var(--font-size-base);
+		line-height: var(--leading-relaxed);
+		color: var(--color-text-secondary);
+	}
+
+	.featured-cta {
+		align-self: flex-start;
+		margin-top: 0.375rem;
+	}
+
+	/* ── EDITORIAL ROWS ── */
+	.erows {
+		margin-top: 1.75rem;
+	}
+
+	.erow {
+		position: relative;
+		display: grid;
+		grid-template-columns: 5.25rem 1fr auto;
+		align-items: center;
+		gap: 1.375rem;
+		padding: 1.625rem 1.25rem 1.625rem 0;
+		border-top: 1px solid var(--color-border);
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
+		transition:
+			padding 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
+			color 0.2s;
+		isolation: isolate;
+	}
+
+	.erow:last-child {
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.erow::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		background: var(--color-accent);
+		transform: scaleY(0);
+		transform-origin: bottom;
+		transition: transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+		z-index: -1;
+	}
+
+	.erow:hover {
+		padding-left: 1.375rem;
+		padding-right: 1.75rem;
+		color: var(--color-on-accent);
+	}
+
+	.erow:hover::before {
+		transform: scaleY(1);
+	}
+
+	.erow:hover .erow-idx,
+	.erow:hover .erow-meta,
+	.erow:hover .erow-tag {
+		color: color-mix(in srgb, var(--color-on-accent) 80%, transparent);
+		border-color: color-mix(in srgb, var(--color-on-accent) 50%, transparent);
+	}
+
+	.erow-idx {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-muted);
+		transition: color 0.2s;
+	}
+
+	.erow-content {
+		min-width: 0;
+	}
+
+	.erow-title {
+		font-family: var(--font-display);
+		font-weight: 600;
+		font-size: clamp(1.1875rem, 3.1cqw, 1.875rem);
+		letter-spacing: -0.02em;
+		line-height: 1.08;
+	}
+
+	.erow-meta {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		transition: color 0.2s;
+		margin-top: 0.5rem;
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+	}
+
+	.erow-right {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		flex-shrink: 0;
+	}
+
+	.erow-tag {
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		padding: 3px 9px;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-secondary);
+		transition:
+			color 0.2s,
+			border-color 0.2s;
+		white-space: nowrap;
+	}
+
+	.erow-arrow {
+		font-size: 1.125rem;
+		opacity: 0;
+		transform: translateX(-8px);
+		transition:
+			opacity 0.28s cubic-bezier(0.2, 0.7, 0.2, 1),
+			transform 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+	}
+
+	.erow:hover .erow-arrow {
+		opacity: 1;
+		transform: translateX(0);
+	}
+
+	/* ── CTA ── */
+	.cta-section {
+		padding: 0 0 3.5rem;
+	}
+
+	.cta-block {
+		background: var(--color-accent);
+		color: var(--color-on-accent);
+		padding: 3rem 2.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1.75rem;
+		flex-wrap: wrap;
+	}
+
+	.cta-kicker {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		opacity: 0.8;
+		margin-bottom: 0.875rem;
+	}
+
+	.cta-h {
+		font-family: var(--font-display);
+		font-weight: 800;
+		font-size: clamp(1.75rem, 6cqw, 3.5rem);
+		letter-spacing: -0.035em;
+		line-height: 0.95;
+	}
+
+	.cta-right {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		align-items: flex-start;
+	}
+
+	.cta-email {
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		opacity: 0.9;
+	}
+
+	.cta-btn {
+		font-family: var(--font-mono);
+		font-size: 0.875rem;
+		font-weight: 600;
+		padding: 0.875rem 1.375rem;
+		background: var(--color-on-accent);
+		color: var(--color-text);
+		border: 1.5px solid var(--color-text);
+		text-decoration: none;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.625rem;
+		transition:
+			transform 0.16s,
+			box-shadow 0.16s;
+		white-space: nowrap;
+	}
+
+	.cta-btn:hover {
+		transform: translate(-3px, -3px);
+		box-shadow: 5px 5px 0 color-mix(in srgb, var(--color-text) 80%, transparent);
+		color: var(--color-text);
+	}
+
+	/* ── Responsive ── */
 	@media (max-width: 900px) {
-		.home-content {
-			padding: var(--spacing-6) var(--spacing-4) var(--spacing-12);
+		.hero {
+			padding: 3rem var(--spacing-4) 2.5rem;
 		}
 
-		.featured-image-link {
-			margin-left: 0;
+		.stats-wrap {
+			padding: 0 var(--spacing-4) 2.5rem;
 		}
 
-		.featured-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-6);
+		.section-inner {
+			padding: 0 var(--spacing-4);
 		}
 
-		.featured-image {
-			border-radius: var(--radius-lg);
+		.erow {
+			grid-template-columns: 3.5rem 1fr auto;
+			gap: 0.875rem;
 		}
 
-		.featured-image img {
-			aspect-ratio: 16 / 9;
-		}
-
-		.posts-grid {
-			grid-template-columns: repeat(2, 1fr);
-			gap: var(--spacing-8) var(--spacing-6);
+		.erow-tag {
+			display: none;
 		}
 	}
 
 	@media (max-width: 600px) {
-		.featured-title {
-			font-size: var(--font-size-2xl);
+		.hero-body {
+			grid-template-columns: 1fr;
 		}
 
-		.posts-grid {
-			grid-template-columns: 1fr;
-			gap: var(--spacing-8);
+		.erow {
+			grid-template-columns: 3rem 1fr 1.5rem;
+			gap: 0.75rem;
+			padding: 1.25rem 0.75rem 1.25rem 0;
+		}
+
+		.erow:hover {
+			padding-left: 1rem;
+		}
+
+		.featured-img {
+			min-height: 180px;
+		}
+
+		.cta-block {
+			flex-direction: column;
+			padding: 2rem 1.5rem;
+		}
+
+		.stats-strip {
+			grid-template-columns: repeat(2, 1fr);
 		}
 	}
 </style>
