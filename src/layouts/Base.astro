@@ -1091,7 +1091,7 @@ const paletteItems = [
 					display: none;
 				}
 
-				/* Nav links: full second row */
+				/* Nav links: full second row, separated from logo row */
 				.nav-links {
 					grid-column: 1;
 					grid-row: 2;
@@ -1099,6 +1099,19 @@ const paletteItems = [
 					gap: var(--spacing-4);
 					flex-wrap: wrap;
 					margin-inline-start: 0;
+					border-top: 1px solid var(--color-border);
+					padding-top: 0.5rem;
+				}
+
+				/* Lift nav links from secondary to primary text on mobile */
+				.nav-links a {
+					color: var(--color-text);
+					font-size: var(--font-size-base);
+				}
+
+				/* Accent the current page link */
+				.nav-links a[aria-current] {
+					color: var(--color-accent);
 				}
 
 				/* Theme toggle: hidden on mobile */
