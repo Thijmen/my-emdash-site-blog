@@ -44,7 +44,8 @@ export default defineConfig({
 			sandboxed: [webhookNotifier],
 			auth: access({
 				teamDomain: "thijmen.cloudflareaccess.com",
-				audienceEnvVar: "CF_ACCESS_AUDIENCE"
+				audienceEnvVar: "CF_ACCESS_AUDIENCE",
+				autoProvision: true
 			}),
 			sandboxRunner: sandbox(),
 			marketplace: "https://marketplace.emdashcms.com",
