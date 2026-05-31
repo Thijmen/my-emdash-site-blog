@@ -11,24 +11,19 @@ type Item = {
 	ico: string;
 	label: string;
 	href?: string;
+	target?: string | null;
 	action?: string;
 };
 
-const NAV: Item[] = [
-	{ group: "Navigate", ico: "~/", label: "Home", href: "/" },
-	{ group: "Navigate", ico: "✎", label: "Writing", href: "/posts" },
-	{ group: "Navigate", ico: "@", label: "About", href: "/pages/about" },
-];
+type Props = {
+	items: Item[];
+	emailAddress?: string;
+};
 
-const ACTIONS: Item[] = [
-	{ group: "Actions", ico: "◐", label: "Toggle theme", action: "theme" },
-	{ group: "Actions", ico: "↗", label: "Copy email", action: "copy-email" },
-	{ group: "Actions", ico: "⊕", label: "RSS feed", href: "/rss.xml" },
-];
-
-const STATIC = [...NAV, ...ACTIONS];
-
-export default function CommandPalette() {
+export default function CommandPalette({
+	items: paletteItems,
+	emailAddress,
+}: Props) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [query, setQuery] = useState("");
 	const [activeIdx, setActiveIdx] = useState(0);
@@ -37,8 +32,8 @@ export default function CommandPalette() {
 	const items = useMemo<Item[]>(() => {
 		const q = query.toLowerCase().trim();
 		const filtered = q
-			? STATIC.filter((it) => it.label.toLowerCase().includes(q))
-			: STATIC;
+			? paletteItems.filter((it) => it.label.toLowerCase().includes(q))
+			: paletteItems;
 		if (!q) return filtered;
 		return [
 			{
@@ -49,7 +44,7 @@ export default function CommandPalette() {
 			},
 			...filtered,
 		];
-	}, [query]);
+	}, [paletteItems, query]);
 
 	const open = useCallback(() => {
 		setIsOpen(true);
@@ -62,7 +57,11 @@ export default function CommandPalette() {
 	const select = useCallback(
 		(item: Item) => {
 			if (item.href) {
-				window.location.href = item.href;
+				if (item.target === "_blank") {
+					window.open(item.href, "_blank", "noopener,noreferrer");
+				} else {
+					window.location.href = item.href;
+				}
 			} else if (item.action === "theme") {
 				const root = document.documentElement;
 				const isDark =
@@ -75,13 +74,13 @@ export default function CommandPalette() {
 					)
 					?.click();
 			} else if (item.action === "copy-email") {
-				navigator.clipboard
-					.writeText("thijmenstavenuiter@gmail.com")
-					.catch(() => {});
+				if (emailAddress) {
+					navigator.clipboard.writeText(emailAddress).catch(() => {});
+				}
 			}
 			close();
 		},
-		[close],
+		[close, emailAddress],
 	);
 
 	// Global keyboard handler
@@ -182,7 +181,7 @@ export default function CommandPalette() {
 								const idx = cursor++;
 								return (
 									<div
-										key={item.label}
+										key={`${item.group}:${item.label}:${item.href ?? item.action ?? idx}`}
 										className={`cmdk-item${idx === activeIdx ? " is-active" : ""}`}
 										role="option"
 										aria-selected={idx === activeIdx}
