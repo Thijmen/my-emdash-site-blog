@@ -43,7 +43,8 @@ export default defineConfig({
 			plugins: [formsPlugin()],
 			sandboxed: [webhookNotifier],
 			auth: access({
-				teamDomain: "thijmen.cloudflareaccess.com"
+				teamDomain: "thijmen.cloudflareaccess.com",
+				audienceEnvVar: "CF_ACCESS_AUDIENCE"
 			}),
 			sandboxRunner: sandbox(),
 			marketplace: "https://marketplace.emdashcms.com",
