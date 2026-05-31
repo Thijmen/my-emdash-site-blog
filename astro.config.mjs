@@ -20,6 +20,8 @@ const buildId = (() => {
 	}
 })();
 
+const buildDate = new Date().toISOString().slice(0, 10);
+
 export default defineConfig({
 	output: "server",
 	adapter: cloudflare(),
@@ -72,6 +74,7 @@ export default defineConfig({
 	vite: {
 		define: {
 			__SITE_BUILD_ID__: JSON.stringify(buildId),
+			__SITE_BUILD_DATE__: JSON.stringify(buildDate),
 		},
 	},
 });

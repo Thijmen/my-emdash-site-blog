@@ -1,6 +1,7 @@
 ---
 import { getMenu, getEmDashCollection, getSiteSettings } from "emdash";
 declare const __SITE_BUILD_ID__: string;
+declare const __SITE_BUILD_DATE__: string;
 import {
 	WidgetArea,
 	EmDashHead,
@@ -212,7 +213,7 @@ const isLoggedIn = !!Astro.locals.user;
 							</div>
 							<div class="metric">
 								<div class="metric-label">last deploy</div>
-								<div class="metric-value">2026-05-31</div>
+								<div class="metric-value">{__SITE_BUILD_DATE__}</div>
 							</div>
 						</div>
 						<div class="term-cmd" style="margin-top: 0.875rem;">
