@@ -20,7 +20,13 @@ const buildId = (() => {
 	}
 })();
 
-const buildDate = new Date().toISOString().slice(0, 10);
+const buildDate = (() => {
+	const d = new Date();
+	const dd = String(d.getUTCDate()).padStart(2, "0");
+	const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+	const yyyy = d.getUTCFullYear();
+	return `${dd}-${mm}-${yyyy}`;
+})();
 
 export default defineConfig({
 	output: "server",
