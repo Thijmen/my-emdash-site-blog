@@ -9,7 +9,7 @@ import {
 	EmDashBodyEnd,
 } from "emdash/ui";
 import { createPublicPageContext } from "emdash/page";
-import LiveSearch from "emdash/ui/search";
+import CommandPalette from "../components/CommandPalette";
 import { Font } from "astro:assets";
 import { resolveBlogSiteIdentity } from "../utils/site-identity";
 import "../styles/theme.css";
@@ -105,6 +105,9 @@ const isLoggedIn = !!Astro.locals.user;
 	</head>
 	<body>
 		<EmDashBodyStart page={pageCtx} />
+
+		<CommandPalette client:load />
+
 		<header class="site-header">
 			<nav class="nav">
 				<a href="/" class="site-title">
@@ -114,14 +117,6 @@ const isLoggedIn = !!Astro.locals.user;
 					}
 				</a>
 				<div class="nav-right">
-					<LiveSearch
-						placeholder="Search..."
-						class="site-search"
-						inputClass="site-search-input"
-						resultsClass="site-search-results"
-						resultClass="site-search-result"
-						collections={["posts", "pages"]}
-					/>
 					<div class="nav-links">
 						{
 							menu?.items.map((item) => (
@@ -131,6 +126,11 @@ const isLoggedIn = !!Astro.locals.user;
 							))
 						}
 					</div>
+					<button id="cmdk-trigger" class="nav-cmd-btn" aria-label="Open command palette">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+						<span>search</span>
+						<span class="nav-cmd-kbd"><kbd>⌘</kbd><kbd>K</kbd></span>
+					</button>
 					<div class="nav-theme">
 						<button type="button" class="theme-btn" data-theme="light" aria-label="Light mode" title="Light mode">
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
@@ -613,107 +613,195 @@ const isLoggedIn = !!Astro.locals.user;
 				color: var(--color-text);
 			}
 
-			/* Search styling */
-			.site-search {
-				position: relative;
-				width: var(--search-input-width);
-				--emdash-search-border-focus: var(--color-accent);
-			}
-
-			:global(.site-search-input) {
-				width: var(--search-input-width);
-				padding: var(--spacing-2) var(--spacing-3);
-				font-family: var(--font-sans);
-				font-size: var(--font-size-sm);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius);
-				background: var(--color-bg);
-				color: var(--color-text);
-				transition:
-					border-color var(--transition-fast),
-					box-shadow var(--transition-fast);
-			}
-
-			:global(.site-search-input)::placeholder {
-				color: var(--color-muted);
-			}
-
-			:global(.site-search-input):focus,
-			:global(.site-search-input):focus-visible {
-				outline: none;
-				border-color: var(--color-accent) !important;
-				box-shadow: 0 0 0 3px var(--color-accent-ring);
-			}
-
-			:global(.site-search-results) {
-				position: absolute;
-				top: 100%;
-				left: 0;
-				right: 0;
-				margin-top: var(--spacing-2);
-				background: var(--color-bg);
-				border: 1px solid var(--color-border);
-				border-radius: var(--radius-lg);
-				box-shadow: var(--shadow-dropdown);
-				max-height: 400px;
-				overflow-y: auto;
-				z-index: 1000;
-			}
-
-			:global(.site-search-results .emdash-live-search-loading),
-			:global(.site-search-results .emdash-live-search-no-results) {
-				padding: var(--spacing-4);
-				text-align: center;
-				color: var(--color-muted);
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result) {
-				display: block;
-				padding: var(--spacing-3) var(--spacing-4);
-				text-decoration: none;
-				color: var(--color-text);
-				border-bottom: 1px solid var(--color-border-subtle);
-				transition: background var(--transition-fast);
-			}
-
-			:global(.site-search-result):last-child {
-				border-bottom: none;
-			}
-
-			:global(.site-search-result):hover,
-			:global(.site-search-result):focus,
-			:global(.site-search-result.focused) {
-				background: var(--color-surface);
-				outline: none;
-			}
-
-			:global(.site-search-result .emdash-live-search-result-title) {
-				display: block;
-				font-weight: 500;
-				font-size: var(--font-size-sm);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-collection) {
-				display: block;
+			/* Nav ⌘K trigger button */
+			.nav-cmd-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				font-family: var(--font-mono);
 				font-size: var(--font-size-xs);
-				color: var(--color-muted);
-				text-transform: uppercase;
-				letter-spacing: var(--tracking-wide);
-				margin-top: 2px;
+				color: var(--color-text-secondary);
+				background: var(--color-surface);
+				border: 1px solid var(--color-border);
+				padding: 5px 10px;
+				cursor: pointer;
+				transition: color var(--transition-fast), border-color var(--transition-fast);
+				white-space: nowrap;
 			}
 
-			:global(.site-search-result .emdash-live-search-result-snippet) {
-				display: block;
-				font-size: var(--font-size-sm);
-				color: var(--color-muted);
-				margin-top: var(--spacing-1);
-				line-height: var(--leading-snug);
-			}
-
-			:global(.site-search-result .emdash-live-search-result-snippet mark) {
-				font-weight: 600;
+			.nav-cmd-btn:hover {
 				color: var(--color-text);
+				border-color: var(--color-border);
+			}
+
+			.nav-cmd-kbd {
+				display: inline-flex;
+				gap: 2px;
+				opacity: 0.6;
+			}
+
+			.nav-cmd-kbd kbd {
+				font-family: var(--font-mono);
+				font-size: 10px;
+				padding: 1px 4px;
+				border: 1px solid var(--color-border);
+				border-bottom-width: 2px;
+				color: var(--color-muted);
+				background: var(--color-bg);
+			}
+
+			/* Command palette overlay */
+			.cmdk-overlay {
+				position: fixed;
+				inset: 0;
+				background: color-mix(in srgb, var(--color-text) 45%, transparent);
+				backdrop-filter: blur(6px);
+				-webkit-backdrop-filter: blur(6px);
+				display: flex;
+				justify-content: center;
+				padding-top: 5rem;
+				z-index: 500;
+				/* Hidden state */
+				opacity: 0;
+				pointer-events: none;
+				transition: opacity 0.15s ease;
+			}
+
+			.cmdk-overlay.is-open {
+				opacity: 1;
+				pointer-events: auto;
+			}
+
+			.cmdk {
+				width: min(560px, calc(100% - 2rem));
+				max-height: 60vh;
+				background: var(--color-bg);
+				border: 1.5px solid var(--color-text);
+				box-shadow: 8px 8px 0 var(--color-accent);
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				align-self: flex-start;
+				transform: translateY(-8px);
+				transition: transform 0.15s ease;
+			}
+
+			.cmdk-overlay.is-open .cmdk {
+				transform: translateY(0);
+			}
+
+			/* Search row */
+			.cmdk-search-row {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				padding: 0 18px;
+				border-bottom: 1.5px solid var(--color-border);
+				flex-shrink: 0;
+			}
+
+			.cmdk-prompt {
+				font-family: var(--font-mono);
+				font-size: 14px;
+				color: var(--color-accent);
+				flex-shrink: 0;
+			}
+
+			.cmdk-input {
+				flex: 1;
+				border: 0;
+				outline: 0;
+				padding: 14px 0;
+				font-family: var(--font-mono);
+				font-size: 14px;
+				background: transparent;
+				color: var(--color-text);
+			}
+
+			.cmdk-input::placeholder {
+				color: var(--color-muted);
+			}
+
+			.cmdk-esc-hint {
+				font-family: var(--font-mono);
+				font-size: 10px;
+				padding: 2px 6px;
+				border: 1px solid var(--color-border);
+				border-bottom-width: 2px;
+				color: var(--color-muted);
+				flex-shrink: 0;
+			}
+
+			/* Results list */
+			.cmdk-list {
+				overflow-y: auto;
+				flex: 1;
+			}
+
+			.cmdk-group-label {
+				font-family: var(--font-mono);
+				font-size: 10.5px;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: var(--color-muted);
+				padding: 10px 18px 6px;
+			}
+
+			.cmdk-item {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				padding: 9px 18px;
+				font-family: var(--font-mono);
+				font-size: 13.5px;
+				cursor: pointer;
+				color: var(--color-text);
+				transition: background var(--transition-fast);
+				user-select: none;
+			}
+
+			.cmdk-item.is-active {
+				background: var(--color-surface);
+			}
+
+			.cmdk-ico {
+				color: var(--color-muted);
+				width: 20px;
+				text-align: center;
+				flex-shrink: 0;
+				font-size: 12px;
+			}
+
+			.cmdk-label {
+				flex: 1;
+			}
+
+			.cmdk-empty {
+				padding: 24px 18px;
+				text-align: center;
+				font-family: var(--font-mono);
+				font-size: 13px;
+				color: var(--color-muted);
+			}
+
+			/* Hint bar */
+			.cmdk-hint {
+				display: flex;
+				gap: 16px;
+				padding: 8px 18px;
+				border-top: 1px solid var(--color-border-subtle);
+				font-family: var(--font-mono);
+				font-size: 11px;
+				color: var(--color-muted);
+				flex-shrink: 0;
+			}
+
+			.cmdk-hint kbd {
+				font-family: inherit;
+				font-size: 10px;
+				padding: 1px 4px;
+				border: 1px solid var(--color-border);
+				color: var(--color-muted);
 			}
 
 			main {
@@ -1082,18 +1170,6 @@ const isLoggedIn = !!Astro.locals.user;
 					row-gap: var(--spacing-2);
 				}
 
-				.site-search {
-					grid-column: 1;
-					width: 100%;
-					max-width: none;
-				}
-
-				:global(.site-search-input) {
-					width: 100% !important;
-					padding: var(--spacing-1) var(--spacing-2) !important;
-					font-size: var(--font-size-sm) !important;
-				}
-
 				.nav-links {
 					grid-column: 1;
 					display: flex;
@@ -1130,20 +1206,7 @@ const isLoggedIn = !!Astro.locals.user;
 			}
 		</script>
 
-		<script>
-			// ⌘K / Ctrl+K to focus search
-			document.addEventListener("keydown", (e) => {
-				if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-					e.preventDefault();
-					const searchInput = document.querySelector(
-						".site-search-input"
-					) as HTMLInputElement;
-					if (searchInput) {
-						searchInput.focus();
-					}
-				}
-			});
-		</script>
+		
 		<EmDashBodyEnd page={pageCtx} />
 	</body>
 </html>
