@@ -5,6 +5,7 @@ import {
 	getTermsForEntries,
 	decodeSlug,
 } from "emdash";
+import { Image } from "emdash/ui";
 import Base from "../../layouts/Base.astro";
 import { getReadingTime } from "../../utils/reading-time";
 
@@ -76,6 +77,13 @@ const countLabel = posts.length === 1 ? "essay" : "essays";
 										<span class="erow-idx">
 											{String(i + 1).padStart(2, "0")}
 										</span>
+										<div class="erow-thumb">
+											{post.data.featured_image ? (
+												<Image image={post.data.featured_image} />
+											) : (
+												<div class="erow-thumb-placeholder" aria-hidden="true" />
+											)}
+										</div>
 										<div class="erow-content">
 											<div class="erow-title">{post.data.title}</div>
 											<div class="erow-meta">
@@ -202,10 +210,10 @@ const countLabel = posts.length === 1 ? "essay" : "essays";
 	.erow {
 		position: relative;
 		display: grid;
-		grid-template-columns: 5.25rem 1fr auto;
+		grid-template-columns: 4rem 8.5rem 1fr auto;
 		align-items: center;
 		gap: 1.375rem;
-		padding: 1.625rem 1.25rem 1.625rem 0;
+		padding: 1.25rem 1.25rem 1.25rem 0;
 		border-bottom: 1px solid var(--color-border);
 		text-decoration: none;
 		color: inherit;
@@ -214,6 +222,34 @@ const countLabel = posts.length === 1 ? "essay" : "essays";
 			padding 0.25s cubic-bezier(0.2, 0.7, 0.2, 1),
 			color 0.2s;
 		isolation: isolate;
+	}
+
+	.erow-thumb {
+		aspect-ratio: 4 / 3;
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+	}
+
+	.erow-thumb :global(img) {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.35s ease;
+	}
+
+	.erow:hover .erow-thumb :global(img) {
+		transform: scale(1.04);
+	}
+
+	.erow-thumb-placeholder {
+		width: 100%;
+		height: 100%;
+		background: repeating-linear-gradient(
+			135deg,
+			var(--color-surface) 0 10px,
+			var(--color-border-subtle) 10px 20px
+		);
 	}
 
 	.erow::before {
@@ -318,7 +354,7 @@ const countLabel = posts.length === 1 ? "essay" : "essays";
 		}
 
 		.erow {
-			grid-template-columns: 3.5rem 1fr auto;
+			grid-template-columns: 2.5rem 6.5rem 1fr auto;
 			gap: 0.875rem;
 		}
 
@@ -329,13 +365,17 @@ const countLabel = posts.length === 1 ? "essay" : "essays";
 
 	@media (max-width: 600px) {
 		.erow {
-			grid-template-columns: 3rem 1fr 1.5rem;
+			grid-template-columns: 5rem 1fr 1.5rem;
 			gap: 0.75rem;
-			padding: 1.25rem 0.75rem 1.25rem 0;
+			padding: 1rem 0.75rem 1rem 0;
 		}
 
 		.erow:hover {
 			padding-left: 1rem;
+		}
+
+		.erow-idx {
+			display: none;
 		}
 	}
 </style>
