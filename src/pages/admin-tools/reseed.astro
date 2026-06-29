@@ -1,0 +1,401 @@
+---
+import { getEmDashEntry } from "emdash";
+import Base from "../../layouts/Base.astro";
+import seedRaw from "../../../seed/seed.json";
+
+export const prerender = false;
+
+type SeedEntry = {
+	id?: string;
+	slug: string;
+	status?: "draft" | "published";
+	data?: Record<string, unknown>;
+};
+
+const seed = seedRaw as {
+	content?: Record<string, SeedEntry[]>;
+};
+
+type Row = {
+	collection: string;
+	slug: string;
+	status: "draft" | "published";
+	exists: boolean;
+	hasMediaRef: boolean;
+	hasContentRef: boolean;
+	data: Record<string, unknown>;
+};
+
+function containsMarker(value: unknown, marker: string): boolean {
+	if (value == null) return false;
+	if (typeof value === "string") return value.startsWith(marker);
+	if (Array.isArray(value)) return value.some((v) => containsMarker(v, marker));
+	if (typeof value === "object") {
+		const obj = value as Record<string, unknown>;
+		if (marker === "$media:" && "$media" in obj) return true;
+		return Object.values(obj).some((v) => containsMarker(v, marker));
+	}
+	return false;
+}
+
+const rows: Row[] = [];
+
+for (const [collection, entries] of Object.entries(seed.content ?? {})) {
+	for (const entry of entries) {
+		const data = entry.data ?? {};
+		let exists = false;
+		try {
+			const result = await getEmDashEntry(collection, entry.slug);
+			exists = !!result.entry;
+		} catch {
+			exists = false;
+		}
+		rows.push({
+			collection,
+			slug: entry.slug,
+			status: entry.status ?? "published",
+			exists,
+			hasMediaRef: containsMarker(data, "$media:"),
+			hasContentRef: containsMarker(data, "$ref:"),
+			data,
+		});
+	}
+}
+
+const missing = rows.filter((r) => !r.exists);
+---
+
+<Base
+	title="Reseed tools"
+	description="Create missing seed content."
+	robots="noindex,nofollow"
+>
+	<section class="reseed">
+		<header class="reseed-head">
+			<p class="kicker">Admin tools</p>
+			<h1>Reseed missing content</h1>
+			<p class="lead">
+				Lists every content entry defined in <code>seed/seed.json</code> and
+				whether it already exists in the database. Use the buttons below to
+				create the ones that are missing — existing entries are never touched.
+			</p>
+			<p class="lead muted">
+				Creating an entry calls the EmDash admin API as you, so you must be
+				signed in to the admin (<a href="/_emdash/admin">/_emdash/admin</a>)
+				first. Entries with <code>$media</code> or <code>$ref:</code>
+				references are skipped — you'll need to recreate those manually.
+			</p>
+		</header>
+
+		<div class="summary">
+			<span><strong>{rows.length}</strong> seed entries total</span>
+			<span class="dot">·</span>
+			<span><strong>{rows.length - missing.length}</strong> already present</span>
+			<span class="dot">·</span>
+			<span class="accent"><strong>{missing.length}</strong> missing</span>
+		</div>
+
+		<table class="rows">
+			<thead>
+				<tr>
+					<th>Collection</th>
+					<th>Slug</th>
+					<th>Status</th>
+					<th>State</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					rows.map((r) => {
+						const cannotCreate = r.hasMediaRef || r.hasContentRef;
+						const payload = JSON.stringify({
+							slug: r.slug,
+							status: r.status,
+							data: r.data,
+						});
+						return (
+							<tr class={r.exists ? "row exists" : "row missing"}>
+								<td>
+									<code>{r.collection}</code>
+								</td>
+								<td>
+									<code>{r.slug}</code>
+								</td>
+								<td>{r.status}</td>
+								<td>
+									{r.exists ? (
+										<span class="badge ok">✓ present</span>
+									) : (
+										<span class="badge warn">missing</span>
+									)}
+								</td>
+								<td>
+									{r.exists ? (
+										<span class="muted-small">—</span>
+									) : cannotCreate ? (
+										<span class="muted-small">
+											Skipped ({r.hasMediaRef ? "$media" : ""}
+											{r.hasMediaRef && r.hasContentRef ? " + " : ""}
+											{r.hasContentRef ? "$ref" : ""})
+										</span>
+									) : (
+										<button
+											type="button"
+											class="create-btn"
+											data-collection={r.collection}
+											data-payload={payload}
+										>
+											Create from seed
+										</button>
+									)}
+								</td>
+							</tr>
+						);
+					})
+				}
+			</tbody>
+		</table>
+
+		<div id="log" class="log" aria-live="polite" />
+	</section>
+</Base>
+
+<script>
+	const log = document.getElementById("log");
+	const buttons = document.querySelectorAll<HTMLButtonElement>(".create-btn");
+
+	function append(line: string, tone: "ok" | "err" | "info" = "info") {
+		if (!log) return;
+		const el = document.createElement("div");
+		el.className = `log-line log-${tone}`;
+		el.textContent = `[${new Date().toLocaleTimeString()}] ${line}`;
+		log.prepend(el);
+	}
+
+	for (const btn of buttons) {
+		btn.addEventListener("click", async () => {
+			const collection = btn.dataset.collection;
+			const payloadRaw = btn.dataset.payload;
+			if (!collection || !payloadRaw) return;
+
+			btn.disabled = true;
+			btn.textContent = "Creating…";
+			append(`Creating ${collection}:${JSON.parse(payloadRaw).slug}…`);
+
+			try {
+				const res = await fetch(`/_emdash/api/content/${collection}`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						"X-EmDash-Request": "1",
+					},
+					credentials: "include",
+					body: payloadRaw,
+				});
+
+				const body = await res.json().catch(() => ({}));
+
+				if (!res.ok) {
+					const msg =
+						(body as { error?: { message?: string } })?.error?.message ??
+						`HTTP ${res.status}`;
+					append(`Failed: ${msg}`, "err");
+					btn.disabled = false;
+					btn.textContent = "Retry";
+					return;
+				}
+
+				append(`Created ${collection} entry`, "ok");
+				btn.textContent = "✓ Created";
+				const row = btn.closest("tr");
+				row?.classList.remove("missing");
+				row?.classList.add("exists");
+				const badge = row?.querySelector(".badge");
+				if (badge) {
+					badge.textContent = "✓ present";
+					badge.classList.remove("warn");
+					badge.classList.add("ok");
+				}
+			} catch (err) {
+				append(`Network error: ${(err as Error).message}`, "err");
+				btn.disabled = false;
+				btn.textContent = "Retry";
+			}
+		});
+	}
+</script>
+
+<style>
+	.reseed {
+		max-width: 960px;
+		margin: 0 auto;
+		padding: 3rem var(--spacing-6) 4rem;
+	}
+
+	.reseed-head {
+		margin-bottom: 2rem;
+	}
+
+	.kicker {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		margin-bottom: 0.75rem;
+	}
+
+	.reseed h1 {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: clamp(2rem, 5cqw, 2.75rem);
+		letter-spacing: -0.025em;
+		line-height: 1;
+		margin-bottom: 1rem;
+	}
+
+	.lead {
+		color: var(--color-text-secondary);
+		font-size: 0.9375rem;
+		line-height: 1.6;
+		max-width: 60ch;
+		margin-bottom: 0.75rem;
+	}
+
+	.lead.muted {
+		color: var(--color-muted);
+		font-size: 0.8125rem;
+	}
+
+	.lead code {
+		font-family: var(--font-mono);
+		font-size: 0.85em;
+		background: var(--color-surface);
+		padding: 0.1em 0.35em;
+		border: 1px solid var(--color-border-subtle);
+	}
+
+	.summary {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+		color: var(--color-text-secondary);
+		padding: 0.875rem 1rem;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		margin-bottom: 1.5rem;
+	}
+
+	.summary .dot {
+		color: var(--color-muted);
+	}
+
+	.summary .accent strong {
+		color: var(--color-accent);
+	}
+
+	.rows {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.875rem;
+	}
+
+	.rows th {
+		text-align: left;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		color: var(--color-muted);
+		padding: 0.5rem 0.75rem;
+		border-bottom: 1.5px solid var(--color-text);
+	}
+
+	.rows td {
+		padding: 0.875rem 0.75rem;
+		border-bottom: 1px solid var(--color-border);
+		vertical-align: middle;
+	}
+
+	.rows code {
+		font-family: var(--font-mono);
+		font-size: 0.8125rem;
+	}
+
+	.row.exists code {
+		color: var(--color-text-secondary);
+	}
+
+	.badge {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: 0.6875rem;
+		padding: 0.2em 0.55em;
+		border: 1px solid var(--color-border);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.badge.ok {
+		color: var(--color-text-secondary);
+		border-color: var(--color-border);
+	}
+
+	.badge.warn {
+		color: var(--color-accent);
+		border-color: var(--color-accent);
+	}
+
+	.create-btn {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		padding: 0.5rem 0.875rem;
+		background: var(--color-text);
+		color: var(--color-bg);
+		border: 1.5px solid var(--color-text);
+		cursor: pointer;
+		transition: transform 0.16s, box-shadow 0.16s;
+	}
+
+	.create-btn:hover:not(:disabled) {
+		transform: translate(-2px, -2px);
+		box-shadow: 3px 3px 0 var(--color-accent);
+	}
+
+	.create-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+	}
+
+	.muted-small {
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.log {
+		margin-top: 1.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		max-height: 240px;
+		overflow-y: auto;
+	}
+
+	.log-line {
+		padding: 0.35rem 0.6rem;
+		border-left: 2px solid var(--color-border);
+		color: var(--color-text-secondary);
+	}
+
+	.log-ok {
+		border-left-color: var(--color-accent);
+		color: var(--color-text);
+	}
+
+	.log-err {
+		border-left-color: #c0392b;
+		color: #c0392b;
+	}
+</style>
