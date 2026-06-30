@@ -11,6 +11,21 @@
 			"invocation_logs": true
     	}
 	},
+	"env": {
+		"preview": {
+			"d1_databases": [
+				{
+					"binding":"DB_PREVIEW",
+					"database_name":"my-emdash-site-preview"
+				}
+			],
+			"kv_namespaces": [
+				{
+					"binding": "SESSION_PREVIEW",
+					"id": "my-emdash-site-blog-session-preview"
+				}
+			]
+	},
 	"previews": {
 		"observability": {
 			"enabled": true,
