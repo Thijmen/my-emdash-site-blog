@@ -9,23 +9,40 @@
 		"logs": {
 			"enabled": true,
 			"invocation_logs": true
-    	}
+		}
 	},
-	"env": {
-		"preview": {
-			"d1_databases": [
-				{
-					"binding":"DB_PREVIEW",
-					"database_name":"my-emdash-site-preview"
-				}
-			],
-			"kv_namespaces": [
-				{
-					"binding": "SESSION_PREVIEW",
-					"id": "my-emdash-site-blog-session-preview"
-				}
-			]
+	"secrets": {
+		"required": ["CF_ACCESS_AUDIENCE"]
 	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "my-emdash-site",
+			"database_id": "8c3b5c36-3f4a-4e54-946b-9811ec632633"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA",
+			"bucket_name": "my-emdash-media"
+		}
+	],
+	// Worker Loader for plugin sandboxing
+	"worker_loaders": [
+		{
+			"binding": "LOADER"
+		}
+	],
+	// Preview deployments. Workers Builds creates a preview URL for every
+	// non-production branch via `wrangler versions upload`; those preview
+	// versions use the bindings declared here, overriding the production
+	// bindings above. Binding NAMES must match what the build expects
+	// (DB, MEDIA, LOADER) so the worker code resolves them; only the
+	// underlying resources differ. Preview bindings are NOT inherited from
+	// the top level, so each one is redeclared here.
+	//
+	// NOTE: `database_id` below must be a real preview D1 database. Create it
+	// with `npx wrangler d1 create my-emdash-site-preview` and paste its id.
 	"previews": {
 		"observability": {
 			"enabled": true,
@@ -33,27 +50,24 @@
 				"enabled": true,
 				"invocation_logs": true
 			}
-		}
-	},
-	"secrets": {
-		"required": ["CF_ACCESS_AUDIENCE"],
-	},
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "my-emdash-site","database_id": "8c3b5c36-3f4a-4e54-946b-9811ec632633",
 		},
-	],
-	"r2_buckets": [
-		{
-			"binding": "MEDIA",
-			"bucket_name": "my-emdash-media","preview_bucket_name": "my-emdash-media",
-		},
-	],
-	// Worker Loader for plugin sandboxing
-	"worker_loaders": [
-		{
-			"binding": "LOADER",
-		},
-	],
+		"d1_databases": [
+			{
+				"binding": "DB",
+				"database_name": "my-emdash-site-preview",
+				"database_id": "<PREVIEW_DB_ID>"
+			}
+		],
+		"r2_buckets": [
+			{
+				"binding": "MEDIA",
+				"bucket_name": "my-emdash-media"
+			}
+		],
+		"worker_loaders": [
+			{
+				"binding": "LOADER"
+			}
+		]
+	}
 }
