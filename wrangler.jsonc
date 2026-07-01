@@ -33,31 +33,33 @@
 			"binding": "LOADER"
 		}
 	],
-	"previews": {
-		"observability": {
-			"enabled": true,
-			"logs": {
+	"env": {
+		"preview": {
+			"observability": {
 				"enabled": true,
-				"invocation_logs": true
-			}
-		},
-		"d1_databases": [
-			{
-				"binding": "DB",
-				"database_name": "my-emdash-site-preview",
-				"database_id": "430ad2a4-aa30-41cb-bda9-d0748f3f1008"
-			}
-		],
-		"r2_buckets": [
-			{
-				"binding": "MEDIA",
-				"bucket_name": "my-emdash-media"
-			}
-		],
-		"worker_loaders": [
-			{
-				"binding": "LOADER"
-			}
-		]
+				"logs": {
+					"enabled": true,
+					"invocation_logs": true
+				}
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "my-emdash-site-preview",
+					"database_id": "430ad2a4-aa30-41cb-bda9-d0748f3f1008"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA",
+					"bucket_name": "my-emdash-media"
+				}
+			],
+			"worker_loaders": [
+				{
+					"binding": "LOADER"
+				}
+			]
+		}
 	}
 }
