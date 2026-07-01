@@ -9,51 +9,57 @@
 		"logs": {
 			"enabled": true,
 			"invocation_logs": true
-    	}
-	},
-	"env": {
-		"preview": {
-			"d1_databases": [
-				{
-					"binding":"DB_PREVIEW",
-					"database_name":"my-emdash-site-preview"
-				}
-			],
-			"kv_namespaces": [
-				{
-					"binding": "SESSION_PREVIEW",
-					"id": "my-emdash-site-blog-session-preview"
-				}
-			]
-	},
-	"previews": {
-		"observability": {
-			"enabled": true,
-			"logs": {
-				"enabled": true,
-				"invocation_logs": true
-			}
 		}
 	},
 	"secrets": {
-		"required": ["CF_ACCESS_AUDIENCE"],
+		"required": ["CF_ACCESS_AUDIENCE"]
 	},
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "my-emdash-site","database_id": "8c3b5c36-3f4a-4e54-946b-9811ec632633",
-		},
+			"database_name": "my-emdash-site",
+			"database_id": "8c3b5c36-3f4a-4e54-946b-9811ec632633"
+		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA",
-			"bucket_name": "my-emdash-media","preview_bucket_name": "my-emdash-media",
-		},
+			"bucket_name": "my-emdash-media"
+		}
 	],
-	// Worker Loader for plugin sandboxing
+	
 	"worker_loaders": [
 		{
-			"binding": "LOADER",
-		},
+			"binding": "LOADER"
+		}
 	],
+	"env": {
+		"preview": {
+			"observability": {
+				"enabled": true,
+				"logs": {
+					"enabled": true,
+					"invocation_logs": true
+				}
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "my-emdash-site-preview",
+					"database_id": "430ad2a4-aa30-41cb-bda9-d0748f3f1008"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA",
+					"bucket_name": "my-emdash-media"
+				}
+			],
+			"worker_loaders": [
+				{
+					"binding": "LOADER"
+				}
+			]
+		}
+	}
 }
