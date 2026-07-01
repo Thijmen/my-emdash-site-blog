@@ -27,22 +27,12 @@
 			"bucket_name": "my-emdash-media"
 		}
 	],
-	// Worker Loader for plugin sandboxing
+	
 	"worker_loaders": [
 		{
 			"binding": "LOADER"
 		}
 	],
-	// Preview deployments. Workers Builds creates a preview URL for every
-	// non-production branch via `wrangler versions upload`; those preview
-	// versions use the bindings declared here, overriding the production
-	// bindings above. Binding NAMES must match what the build expects
-	// (DB, MEDIA, LOADER) so the worker code resolves them; only the
-	// underlying resources differ. Preview bindings are NOT inherited from
-	// the top level, so each one is redeclared here.
-	//
-	// NOTE: `database_id` below must be a real preview D1 database. Create it
-	// with `npx wrangler d1 create my-emdash-site-preview` and paste its id.
 	"previews": {
 		"observability": {
 			"enabled": true,
