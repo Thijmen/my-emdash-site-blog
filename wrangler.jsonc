@@ -45,7 +45,7 @@
 			{
 				"binding": "DB",
 				"database_name": "my-emdash-site-preview",
-				"database_id": "<PREVIEW_DB_ID>"
+				"database_id": "430ad2a4-aa30-41cb-bda9-d0748f3f1008"
 			}
 		],
 		"r2_buckets": [
