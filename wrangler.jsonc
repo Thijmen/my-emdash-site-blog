@@ -64,5 +64,45 @@
 				"binding": "LOADER"
 			}
 		]
+	},
+	// Fallback preview environment while the account lacks Worker Previews
+	// (private beta) access. Workers Builds non-production branches build with
+	// `CLOUDFLARE_ENV=preview npm run build` — the @astrojs/cloudflare adapter
+	// resolves this environment into its generated deploy config — and then
+	// deploy with a plain `npx wrangler deploy`, producing a single shared
+	// preview worker with the preview D1/R2. Bindings are not inherited from
+	// the top level, so everything is redeclared.
+	"env": {
+		"preview": {
+			"name": "my-emdash-site-blog-preview",
+			"observability": {
+				"enabled": true,
+				"logs": {
+					"enabled": true,
+					"invocation_logs": true
+				}
+			},
+			"secrets": {
+				"required": ["CF_ACCESS_AUDIENCE"]
+			},
+			"d1_databases": [
+				{
+					"binding": "DB",
+					"database_name": "my-emdash-site-preview",
+					"database_id": "430ad2a4-aa30-41cb-bda9-d0748f3f1008"
+				}
+			],
+			"r2_buckets": [
+				{
+					"binding": "MEDIA",
+					"bucket_name": "my-emdash-media-preview"
+				}
+			],
+			"worker_loaders": [
+				{
+					"binding": "LOADER"
+				}
+			]
+		}
 	}
 }
