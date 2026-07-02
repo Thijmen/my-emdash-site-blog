@@ -65,6 +65,110 @@
 					"searchable": true
 				}
 			]
+		},
+		{
+			"slug": "homepage",
+			"label": "Homepage",
+			"labelSingular": "Homepage",
+			"icon": "⌂",
+			"supports": [],
+			"fields": [
+				{
+					"slug": "hero_kicker",
+					"label": "Hero kicker (mono text above the headline)",
+					"type": "string"
+				},
+				{
+					"slug": "hero_heading_pre_accent",
+					"label": "Headline · text before accent word",
+					"type": "string"
+				},
+				{
+					"slug": "hero_heading_accent",
+					"label": "Headline · accent word (rendered in accent colour)",
+					"type": "string"
+				},
+				{
+					"slug": "hero_heading_middle",
+					"label": "Headline · middle line",
+					"type": "string"
+				},
+				{
+					"slug": "hero_heading_italic",
+					"label": "Headline · italic word",
+					"type": "string"
+				},
+				{
+					"slug": "hero_heading_post_italic",
+					"label": "Headline · text after italic word",
+					"type": "string"
+				},
+				{
+					"slug": "hero_lead",
+					"label": "Hero lead paragraph",
+					"type": "text"
+				},
+				{
+					"slug": "hero_cta_label",
+					"label": "Hero CTA label",
+					"type": "string"
+				},
+				{
+					"slug": "hero_cta_url",
+					"label": "Hero CTA URL",
+					"type": "string"
+				},
+				{
+					"slug": "terminal_title",
+					"label": "Terminal title bar text",
+					"type": "string"
+				},
+				{
+					"slug": "terminal_lines",
+					"label": "Terminal lines (one per line, blank line for spacer)",
+					"type": "text"
+				},
+				{
+					"slug": "stats",
+					"label": "Stats strip (JSON array of { fig, lbl })",
+					"type": "json"
+				},
+				{
+					"slug": "writing_section_number",
+					"label": "Writing section number",
+					"type": "string"
+				},
+				{
+					"slug": "writing_section_title",
+					"label": "Writing section title",
+					"type": "string"
+				},
+				{
+					"slug": "cta_kicker",
+					"label": "CTA kicker",
+					"type": "string"
+				},
+				{
+					"slug": "cta_heading_line_1",
+					"label": "CTA heading line 1",
+					"type": "string"
+				},
+				{
+					"slug": "cta_heading_line_2",
+					"label": "CTA heading line 2",
+					"type": "string"
+				},
+				{
+					"slug": "cta_email",
+					"label": "CTA email address",
+					"type": "string"
+				},
+				{
+					"slug": "cta_button_label",
+					"label": "CTA button label",
+					"type": "string"
+				}
+			]
 		}
 	],
 	"taxonomies": [
@@ -275,6 +379,39 @@
 		}
 	],
 	"content": {
+		"homepage": [
+			{
+				"id": "home",
+				"slug": "home",
+				"status": "published",
+				"data": {
+					"hero_kicker": "Staff Software Engineer — Platform & Distributed Systems",
+					"hero_heading_pre_accent": "I build",
+					"hero_heading_accent": "calm",
+					"hero_heading_middle": "infrastructure for",
+					"hero_heading_italic": "noisy",
+					"hero_heading_post_italic": "systems.",
+					"hero_lead": "I work on distributed systems, developer tools, and the people problems hiding inside them.",
+					"hero_cta_label": "read the writing",
+					"hero_cta_url": "/posts",
+					"terminal_title": "thijmen@dev — zsh",
+					"terminal_lines": "> whoami\nstaff engineer · platform\n\n> mission\nmake distributed systems\nfeel routine — for everyone.",
+					"stats": [
+						{ "fig": "7", "lbl": "essays published" },
+						{ "fig": "10+", "lbl": "years building" },
+						{ "fig": "4", "lbl": "open source tools" },
+						{ "fig": "3", "lbl": "conference talks" }
+					],
+					"writing_section_number": "01",
+					"writing_section_title": "Writing",
+					"cta_kicker": "Get in touch",
+					"cta_heading_line_1": "Let's build",
+					"cta_heading_line_2": "something calm.",
+					"cta_email": "thijmenstavenuiter@gmail.com",
+					"cta_button_label": "send email"
+				}
+			}
+		],
 		"pages": [
 			{
 				"id": "about",

@@ -1,6 +1,7 @@
 ---
 import {
 	getEmDashCollection,
+	getEmDashEntry,
 	getTermsForEntries,
 	getSiteSettings,
 } from "emdash";
@@ -11,17 +12,21 @@ import { resolveBlogSiteIdentity } from "../utils/site-identity";
 
 const POSTS_LIMIT = 7;
 
-const [{ entries: posts, cacheHint }, settings] = await Promise.all([
-	getEmDashCollection("posts", {
-		orderBy: { published_at: "desc" },
-		limit: POSTS_LIMIT + 1,
-	}),
-	getSiteSettings(),
-]);
+const [{ entries: posts, cacheHint }, settings, homepageResult] =
+	await Promise.all([
+		getEmDashCollection("posts", {
+			orderBy: { published_at: "desc" },
+			limit: POSTS_LIMIT + 1,
+		}),
+		getSiteSettings(),
+		getEmDashEntry("homepage", "home"),
+	]);
 
 const { siteTitle, siteTagline } = resolveBlogSiteIdentity(settings);
 
 if (Astro.cache?.enabled) Astro.cache.set(cacheHint);
+
+const home = homepageResult.entry?.data ?? {};
 
 const visiblePosts = posts.slice(0, POSTS_LIMIT);
 const hasMorePosts = posts.length > POSTS_LIMIT;
@@ -45,6 +50,33 @@ function formatDate(date: Date | null | undefined) {
 		day: "numeric",
 	});
 }
+
+const heroKicker = home.hero_kicker ?? "";
+const heroPreAccent = home.hero_heading_pre_accent ?? "";
+const heroAccent = home.hero_heading_accent ?? "";
+const heroMiddle = home.hero_heading_middle ?? "";
+const heroItalic = home.hero_heading_italic ?? "";
+const heroPostItalic = home.hero_heading_post_italic ?? "";
+const heroLead = home.hero_lead ?? siteTagline;
+const heroCtaLabel = home.hero_cta_label ?? "read the writing";
+const heroCtaUrl = home.hero_cta_url ?? "/posts";
+
+const terminalTitle = home.terminal_title ?? "";
+const terminalLines: string =
+	typeof home.terminal_lines === "string" ? home.terminal_lines : "";
+
+const stats: Array<{ fig: string; lbl: string }> = Array.isArray(home.stats)
+	? home.stats
+	: [];
+
+const writingNum = home.writing_section_number ?? "01";
+const writingTitle = home.writing_section_title ?? "Writing";
+
+const ctaKicker = home.cta_kicker ?? "";
+const ctaH1 = home.cta_heading_line_1 ?? "";
+const ctaH2 = home.cta_heading_line_2 ?? "";
+const ctaEmail = home.cta_email ?? "";
+const ctaButtonLabel = home.cta_button_label ?? "send email";
 ---
 
 <Base title={siteTitle} description={siteTagline}>
@@ -63,67 +95,69 @@ function formatDate(date: Date | null | undefined) {
 				<section class="hero">
 					<div class="grid-lines" aria-hidden="true" />
 					<div class="hero-inner">
-						<p class="hero-kicker">
-							Staff Software Engineer — Platform &amp; Distributed Systems
-						</p>
+						{heroKicker && <p class="hero-kicker">{heroKicker}</p>}
 						<h1 class="hero-h">
-							I build{" "}
-							<span class="hero-acc">calm</span>
+							{heroPreAccent}{" "}
+							<span class="hero-acc">{heroAccent}</span>
 							<br />
-							infrastructure for
+							{heroMiddle}
 							<br />
-							<em>noisy</em> systems.
+							<em>{heroItalic}</em> {heroPostItalic}
 						</h1>
 						<div class="hero-body">
 							<div class="hero-text">
-								<p class="hero-lead">{siteTagline}</p>
+								<p class="hero-lead">{heroLead}</p>
 								<div class="hero-pills">
-									<a href="/posts" class="pill pill-solid">
-										read the writing <span aria-hidden="true">→</span>
+									<a href={heroCtaUrl} class="pill pill-solid">
+										{heroCtaLabel} <span aria-hidden="true">→</span>
 									</a>
 								</div>
 							</div>
-							<div class="hero-term">
-								<div class="term-bar">
-									<span class="term-dots" aria-hidden="true">
-										<i class="term-dot term-dot-acc" />
-										<i class="term-dot" />
-										<i class="term-dot" />
-									</span>
-									<span>thijmen@dev — zsh</span>
+							{(terminalTitle || terminalLines) && (
+								<div class="hero-term">
+									<div class="term-bar">
+										<span class="term-dots" aria-hidden="true">
+											<i class="term-dot term-dot-acc" />
+											<i class="term-dot" />
+											<i class="term-dot" />
+										</span>
+										<span>{terminalTitle}</span>
+									</div>
+									<div class="term-body">
+										<code
+											id="term-output"
+											class="term-text"
+											data-lines={terminalLines}
+											aria-live="off"
+										/>
+										<span class="term-cursor" aria-hidden="true" />
+									</div>
 								</div>
-								<div class="term-body">
-									<code id="term-output" class="term-text" aria-live="off" />
-									<span class="term-cursor" aria-hidden="true" />
-								</div>
-							</div>
+							)}
 						</div>
 					</div>
 				</section>
 
 				{/* ── STATS STRIP ── */}
-				<div class="stats-wrap">
-					<div class="stats-strip">
-						{[
-							{ fig: String(visiblePosts.length), lbl: "essays published" },
-							{ fig: "10+", lbl: "years building" },
-							{ fig: "4", lbl: "open source tools" },
-							{ fig: "3", lbl: "conference talks" },
-						].map((s, i) => (
-							<div class={`stat${i === 0 ? " stat-noborder" : ""}`}>
-								<div class="stat-fig">{s.fig}</div>
-								<div class="stat-lbl">{s.lbl}</div>
-							</div>
-						))}
+				{stats.length > 0 && (
+					<div class="stats-wrap">
+						<div class="stats-strip">
+							{stats.map((s, i) => (
+								<div class={`stat${i === 0 ? " stat-noborder" : ""}`}>
+									<div class="stat-fig">{s.fig}</div>
+									<div class="stat-lbl">{s.lbl}</div>
+								</div>
+							))}
+						</div>
 					</div>
-				</div>
+				)}
 
 				{/* ── WRITING ── */}
 				<section class="writing-section">
 					<div class="section-inner">
 						<div class="sec-head">
-							<span class="sec-num">01</span>
-							<h2 class="sec-title">Writing</h2>
+							<span class="sec-num">{writingNum}</span>
+							<h2 class="sec-title">{writingTitle}</h2>
 							{hasMorePosts && (
 								<a href="/posts" class="sec-link">
 									all posts →
@@ -133,10 +167,7 @@ function formatDate(date: Date | null | undefined) {
 
 						{/* Featured post */}
 						{featuredPost && (
-							<a
-								class="featured-post"
-								href={`/posts/${featuredPost.id}`}
-							>
+							<a class="featured-post" href={`/posts/${featuredPost.id}`}>
 								<div class="featured-img">
 									{featuredPost.data.featured_image ? (
 										<Image image={featuredPost.data.featured_image} />
@@ -158,9 +189,7 @@ function formatDate(date: Date | null | undefined) {
 											</>
 										)}
 										<span>·</span>
-										<span>
-											{getReadingTime(featuredPost.data.content)} min
-										</span>
+										<span>{getReadingTime(featuredPost.data.content)} min</span>
 									</div>
 									<h3 class="featured-title">{featuredPost.data.title}</h3>
 									{featuredPost.data.excerpt && (
@@ -189,9 +218,7 @@ function formatDate(date: Date | null | undefined) {
 												<div class="erow-title">{post.data.title}</div>
 												<div class="erow-meta">
 													{post.data.publishedAt && (
-														<time>
-															{formatDate(post.data.publishedAt)}
-														</time>
+														<time>{formatDate(post.data.publishedAt)}</time>
 													)}
 													<span>·</span>
 													<span>
@@ -218,46 +245,41 @@ function formatDate(date: Date | null | undefined) {
 				</section>
 
 				{/* ── CTA ── */}
-				<section class="cta-section">
-					<div class="section-inner">
-						<div class="cta-block">
-							<div>
-								<p class="cta-kicker">Get in touch</p>
-								<h2 class="cta-h">
-									Let's build
-									<br />
-									something calm.
-								</h2>
-							</div>
-							<div class="cta-right">
-								<code class="cta-email">$ mailx thijmenstavenuiter@gmail.com</code>
-								<a
-									href="mailto:thijmenstavenuiter@gmail.com"
-									class="cta-btn"
-								>
-									send email →
-								</a>
+				{(ctaKicker || ctaH1 || ctaH2 || ctaEmail) && (
+					<section class="cta-section">
+						<div class="section-inner">
+							<div class="cta-block">
+								<div>
+									{ctaKicker && <p class="cta-kicker">{ctaKicker}</p>}
+									<h2 class="cta-h">
+										{ctaH1}
+										{ctaH1 && ctaH2 && <br />}
+										{ctaH2}
+									</h2>
+								</div>
+								<div class="cta-right">
+									{ctaEmail && (
+										<>
+											<code class="cta-email">$ mailx {ctaEmail}</code>
+											<a href={`mailto:${ctaEmail}`} class="cta-btn">
+												{ctaButtonLabel} →
+											</a>
+										</>
+									)}
+								</div>
 							</div>
 						</div>
-					</div>
-				</section>
+					</section>
+				)}
 			</div>
 		)
 	}
 </Base>
 
 <script>
-	const output = document.getElementById("term-output") as HTMLElement;
+	const output = document.getElementById("term-output") as HTMLElement | null;
 	if (output) {
-		const lines = [
-			"> whoami",
-			"staff engineer · platform",
-			"",
-			"> mission",
-			"make distributed systems",
-			"feel routine — for everyone.",
-		];
-		const flat = lines.join("\n");
+		const flat = output.dataset.lines ?? "";
 		let pos = 0;
 
 		const tick = () => {
@@ -268,7 +290,7 @@ function formatDate(date: Date | null | undefined) {
 			}
 		};
 
-		setTimeout(tick, 800);
+		if (flat) setTimeout(tick, 800);
 	}
 </script>
 
